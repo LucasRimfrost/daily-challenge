@@ -16,7 +16,7 @@ struct HealthResponse {
 
 async fn health_check(State(state): State<AppState>) -> AppResult<Json<HealthResponse>> {
     sqlx::query!("SELECT 1 as result")
-        .fetch_one(&state.db)
+        .fetch_one(&state.pool)
         .await?;
 
     Ok(Json(HealthResponse {

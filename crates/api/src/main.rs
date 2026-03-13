@@ -10,7 +10,7 @@ mod routes;
 #[allow(dead_code)]
 #[derive(Clone)]
 struct AppState {
-    pub db: PgPool,
+    pub pool: PgPool,
     pub config: Config,
 }
 
@@ -28,7 +28,7 @@ async fn main() {
 
     let addr = format!("{}:{}", config.host, config.port);
 
-    let state = AppState { db: pool, config };
+    let state = AppState { pool, config };
     let router = routes::router(state);
 
     let listener = tokio::net::TcpListener::bind(&addr)

@@ -4,7 +4,9 @@ use tower_http::{set_header::SetResponseHeaderLayer, trace::TraceLayer};
 use crate::{AppState, handlers};
 
 pub fn router(state: AppState) -> Router {
-    let routes = Router::new().merge(handlers::health::router());
+    let routes = Router::new()
+        .merge(handlers::health::router())
+        .nest("/auth", handlers::auth::router());
 
     Router::new()
         .nest("/api/v1", Router::new().merge(routes))

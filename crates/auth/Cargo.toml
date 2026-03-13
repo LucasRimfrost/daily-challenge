@@ -8,6 +8,7 @@ edition = "2024"
 shared.workspace = true
 
 # External crates
+argon2.workspace = true
 chrono.workspace = true
 serde.workspace = true
 jsonwebtoken.workspace = true
