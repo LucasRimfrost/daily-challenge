@@ -6,6 +6,7 @@ resolver = "2"
 # Internal crates
 shared = { path = "crates/shared" }
 db = { path = "crates/db" }
+auth = { path = "crates/auth" }
 
 
 # External crates
