@@ -72,3 +72,14 @@ pub struct LeaderboardRow {
     pub longest_streak: i32,
     pub total_solved: i32,
 }
+
+#[derive(Debug, FromRow)]
+pub struct ArchiveRow {
+    pub id: Uuid,
+    pub title: String,
+    pub difficulty: Difficulty,
+    pub scheduled_date: chrono::NaiveDate,
+    pub max_attempts: i32,
+    pub is_solved: bool,
+    pub attempts_used: i64,
+}

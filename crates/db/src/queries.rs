@@ -3,7 +3,8 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::models::{
-    Challenge, ChallengeHistory, Difficulty, LeaderboardRow, Submission, User, UserStats,
+    ArchiveRow, Challenge, ChallengeHistory, Difficulty, LeaderboardRow, Submission, User,
+    UserStats,
 };
 
 pub async fn create_user(
@@ -73,6 +74,24 @@ pub async fn find_challenge_by_date(
         WHERE scheduled_date = $1
         "#,
         scheduled_date,
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(AppError::from)
+}
+
+pub async fn find_challenge_by_id(pool: &PgPool, id: Uuid) -> AppResult<Option<Challenge>> {
+    sqlx::query_as!(
+        Challenge,
+        r#"
+        SELECT id, title, description,
+               difficulty as "difficulty: Difficulty",
+               expected_answer, hint, max_attempts,
+               scheduled_date, created_at
+        FROM challenges
+        WHERE id = $1
+        "#,
+        id
     )
     .fetch_optional(pool)
     .await
@@ -243,6 +262,33 @@ pub async fn find_user_stats(pool: &PgPool, user_id: Uuid) -> AppResult<Option<U
         user_id
     )
     .fetch_optional(pool)
+    .await
+    .map_err(AppError::from)
+}
+
+pub async fn find_past_challenges_with_status(
+    pool: &PgPool,
+    user_id: Uuid,
+    today: chrono::NaiveDate,
+) -> AppResult<Vec<ArchiveRow>> {
+    sqlx::query_as!(
+        ArchiveRow,
+        r#"
+        SELECT c.id, c.title,
+               c.difficulty as "difficulty: Difficulty",
+               c.scheduled_date, c.max_attempts,
+               COALESCE(bool_or(s.is_correct), false) as "is_solved!",
+               COUNT(s.id) as "attempts_used!"
+        FROM challenges c
+        LEFT JOIN submissions s ON s.challenge_id = c.id AND s.user_id = $1
+        WHERE c.scheduled_date < $2
+        GROUP BY c.id
+        ORDER BY c.scheduled_date DESC
+        "#,
+        user_id,
+        today
+    )
+    .fetch_all(pool)
     .await
     .map_err(AppError::from)
 }
