@@ -50,3 +50,54 @@ pub fn validate_token(token: &str, secret: &str) -> AppResult<Claims> {
         AppError::Unauthorized
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const SECRET: &str = "test-secret-key-for-unit-tests";
+    const USER_ID: &str = "550e8400-e29b-41d4-a716-446655440000";
+
+    #[test]
+    fn create_access_token_produces_valid_token() {
+        let token = create_access_token(USER_ID, SECRET, 60).unwrap();
+        // JWT has three dot-separated base64 segments
+        assert_eq!(token.split('.').count(), 3);
+    }
+
+    #[test]
+    fn validate_token_accepts_valid_token() {
+        let token = create_access_token(USER_ID, SECRET, 60).unwrap();
+        let claims = validate_token(&token, SECRET).unwrap();
+
+        assert_eq!(claims.sub, USER_ID);
+        assert_eq!(claims.iss, "daily-challenge");
+        assert!(claims.exp > claims.iat);
+    }
+
+    #[test]
+    fn validate_token_rejects_expired_token() {
+        // -5 minutes ensures it's well past jsonwebtoken's default 60s leeway
+        let token = create_access_token(USER_ID, SECRET, -5).unwrap();
+        let result = validate_token(&token, SECRET);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn validate_token_rejects_wrong_secret() {
+        let token = create_access_token(USER_ID, SECRET, 60).unwrap();
+        let result = validate_token(&token, "wrong-secret");
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn validate_token_rejects_malformed_string() {
+        let result = validate_token("not.a.jwt", SECRET);
+        assert!(result.is_err());
+
+        let result = validate_token("total-garbage", SECRET);
+        assert!(result.is_err());
+    }
+}

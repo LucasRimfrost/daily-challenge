@@ -1,18 +1,7 @@
+use api::{AppState, routes};
 use db::connection;
 use shared::config::Config;
-use sqlx::PgPool;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
-
-mod handlers;
-mod middleware;
-mod routes;
-
-#[allow(dead_code)]
-#[derive(Clone)]
-struct AppState {
-    pub pool: PgPool,
-    pub config: Config,
-}
 
 #[tokio::main]
 async fn main() {

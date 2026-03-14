@@ -25,3 +25,28 @@ pub fn verify_password(password: &str, hash: &str) -> Result<bool, AppError> {
         .verify_password(password.as_bytes(), &parsed_hash)
         .is_ok())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hash_produces_valid_argon2_string() {
+        let hash = hash_password("test-password-123").unwrap();
+        assert!(hash.starts_with("$argon2"));
+        // Should be parseable by argon2
+        PasswordHash::new(&hash).expect("hash should be a valid PHC string");
+    }
+
+    #[test]
+    fn correct_password_verifies() {
+        let hash = hash_password("correct-horse-battery").unwrap();
+        assert!(verify_password("correct-horse-battery", &hash).unwrap());
+    }
+
+    #[test]
+    fn wrong_password_fails_verification() {
+        let hash = hash_password("correct-horse-battery").unwrap();
+        assert!(!verify_password("wrong-password", &hash).unwrap());
+    }
+}
