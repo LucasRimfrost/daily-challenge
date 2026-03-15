@@ -102,6 +102,45 @@ export interface HistoryEntry {
   submitted_at: string;
 }
 
+// ---- Code Output ----
+
+export interface CodeOutputChallenge {
+  id: string;
+  title: string;
+  description: string;
+  language: string;
+  code_snippet: string;
+  difficulty: "easy" | "medium" | "hard";
+  hint: string | null;
+  max_attempts: number;
+  scheduled_date: string;
+  attempts_used: number;
+  is_solved: boolean;
+  correct_answer: string | null;
+}
+
+export interface CodeOutputArchiveEntry {
+  id: string;
+  title: string;
+  language: string;
+  difficulty: "easy" | "medium" | "hard";
+  scheduled_date: string;
+  is_solved: boolean;
+  attempts_used: number;
+  max_attempts: number;
+}
+
+export interface CodeOutputHistoryEntry {
+  challenge_id: string;
+  title: string;
+  language: string;
+  difficulty: "easy" | "medium" | "hard";
+  scheduled_date: string;
+  is_correct: boolean;
+  attempt_number: number;
+  submitted_at: string;
+}
+
 // ---- Games ----
 
 export interface Game {

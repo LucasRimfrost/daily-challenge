@@ -17,15 +17,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getHistory } from "@/api/trivia";
+import { getHistory } from "@/api/code-output";
 import { ApiRequestError } from "@/api/client";
-import type { HistoryEntry } from "@/api/types";
+import type { CodeOutputHistoryEntry } from "@/api/types";
 import { cn } from "@/lib/utils";
-import { difficultyConfig } from "@/lib/game";
-import { CheckCircle, History, RefreshCw, ScrollText, XCircle } from "lucide-react";
+import { difficultyConfig, getLanguageLabel } from "@/lib/game";
+import {
+  CheckCircle,
+  History,
+  RefreshCw,
+  ScrollText,
+  XCircle,
+} from "lucide-react";
 
-export function HistoryPage() {
-  const [entries, setEntries] = useState<HistoryEntry[]>([]);
+export function CodeOutputHistoryPage() {
+  const [entries, setEntries] = useState<CodeOutputHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -87,7 +93,7 @@ export function HistoryPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
             <History className="size-5" />
-            History
+            What's the Output? History
           </CardTitle>
           <CardDescription>
             {entries.length === 0
@@ -117,10 +123,14 @@ export function HistoryPage() {
               </TableHeader>
               <TableBody>
                 {entries.map((entry) => {
-                  const diff = difficultyConfig[entry.difficulty] ?? difficultyConfig.medium;
+                  const diff =
+                    difficultyConfig[entry.difficulty] ??
+                    difficultyConfig.medium;
 
                   return (
-                    <TableRow key={`${entry.challenge_id}-${entry.submitted_at}`}>
+                    <TableRow
+                      key={`${entry.challenge_id}-${entry.submitted_at}`}
+                    >
                       <TableCell>
                         {entry.is_correct ? (
                           <CheckCircle className="size-4 text-green-500" />
@@ -131,9 +141,17 @@ export function HistoryPage() {
                       <TableCell>
                         <div>
                           <p className="font-medium">{entry.title}</p>
-                          <p className="text-xs text-muted-foreground sm:hidden">
-                            {entry.scheduled_date}
-                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs text-muted-foreground sm:hidden">
+                              {entry.scheduled_date}
+                            </p>
+                            <Badge
+                              variant="outline"
+                              className="border-neutral-700 bg-neutral-800 text-[10px] text-neutral-300"
+                            >
+                              {getLanguageLabel(entry.language)}
+                            </Badge>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="hidden text-muted-foreground sm:table-cell">

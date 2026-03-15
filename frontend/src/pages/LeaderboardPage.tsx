@@ -20,7 +20,7 @@ import { ApiRequestError } from "@/api/client";
 import type { LeaderboardEntry } from "@/api/types";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { Flame, Medal, RefreshCw, Trophy, Users } from "lucide-react";
+import { Code, Flame, Medal, RefreshCw, Trophy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function RankCell({ rank }: { rank: number }) {
@@ -35,6 +35,7 @@ function RankCell({ rank }: { rank: number }) {
 
 export function LeaderboardPage() {
   const { user } = useAuth();
+  const [tab, setTab] = useState<"trivia" | "code-output">("trivia");
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -100,9 +101,43 @@ export function LeaderboardPage() {
           <CardDescription>
             Top players ranked by total challenges solved
           </CardDescription>
+          <div className="mt-3 flex gap-1 rounded-lg bg-muted p-1">
+            <button
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                tab === "trivia"
+                  ? "bg-background shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              onClick={() => setTab("trivia")}
+            >
+              <Trophy className="size-3.5" />
+              Daily Trivia
+            </button>
+            <button
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                tab === "code-output"
+                  ? "bg-background shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              onClick={() => setTab("code-output")}
+            >
+              <Code className="size-3.5" />
+              What's the Output?
+            </button>
+          </div>
         </CardHeader>
         <CardContent>
-          {entries.length === 0 ? (
+          {tab === "code-output" ? (
+            <div className="flex flex-col items-center gap-2 py-12 text-center">
+              <Code className="size-10 text-muted-foreground/50" />
+              <p className="font-medium">Coming soon</p>
+              <p className="text-sm text-muted-foreground">
+                The What's the Output? leaderboard is on its way!
+              </p>
+            </div>
+          ) : entries.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-center">
               <Users className="size-10 text-muted-foreground/50" />
               <p className="font-medium">No players yet</p>

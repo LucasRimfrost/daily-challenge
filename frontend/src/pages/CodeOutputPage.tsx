@@ -17,13 +17,17 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { getChallengeByDate, getToday, submitAnswer } from "@/api/trivia";
+import {
+  getChallengeByDate,
+  getToday,
+  submitAnswer,
+} from "@/api/code-output";
 import { toast } from "sonner";
 import { ApiRequestError } from "@/api/client";
-import type { Challenge, SubmitResponse } from "@/api/types";
+import type { CodeOutputChallenge, SubmitResponse } from "@/api/types";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { difficultyConfig } from "@/lib/game";
+import { difficultyConfig, getLanguageLabel } from "@/lib/game";
 import {
   CheckCircle,
   ClipboardCheck,
@@ -31,25 +35,26 @@ import {
   Lightbulb,
   Send,
   Share2,
-  Trophy,
+  Terminal,
   XCircle,
 } from "lucide-react";
 
-function generateShareText(challenge: Challenge): string {
+function generateShareText(challenge: CodeOutputChallenge): string {
   const pattern = Array.from({ length: challenge.attempts_used })
     .map((_, i) => {
-      if (challenge.is_solved && i === challenge.attempts_used - 1) return "\u{1F7E9}";
+      if (challenge.is_solved && i === challenge.attempts_used - 1)
+        return "\u{1F7E9}";
       return "\u2B1B";
     })
     .join("");
 
-  return `Daily Challenge ${challenge.scheduled_date} ${pattern} ${challenge.attempts_used}/${challenge.max_attempts}`;
+  return `What's the Output? ${challenge.scheduled_date} ${pattern} ${challenge.attempts_used}/${challenge.max_attempts}`;
 }
 
-export function ChallengePage() {
+export function CodeOutputPage() {
   const { date } = useParams<{ date?: string }>();
   const { user, refresh } = useAuth();
-  const [challenge, setChallenge] = useState<Challenge | null>(null);
+  const [challenge, setChallenge] = useState<CodeOutputChallenge | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [answer, setAnswer] = useState("");
@@ -96,9 +101,12 @@ export function ChallengePage() {
     fetchChallenge();
   }, [fetchChallenge]);
 
-  // Auto-focus input when challenge loads
   useEffect(() => {
-    if (challenge && !challenge.is_solved && challenge.attempts_used < challenge.max_attempts) {
+    if (
+      challenge &&
+      !challenge.is_solved &&
+      challenge.attempts_used < challenge.max_attempts
+    ) {
       inputRef.current?.focus();
     }
   }, [challenge]);
@@ -115,7 +123,7 @@ export function ChallengePage() {
     e.preventDefault();
     if (!challenge) return;
     if (!answer.trim()) {
-      setAnswerError("Enter an answer");
+      setAnswerError("Enter the expected output");
       return;
     }
 
@@ -132,25 +140,20 @@ export function ChallengePage() {
 
       if (result.hint) setHint(result.hint);
 
-      // Animate the newly filled dot
       setPoppedDot(result.attempt_number - 1);
       setTimeout(() => setPoppedDot(-1), 400);
 
       if (result.is_correct) {
-        // Refresh auth to update streak in navbar
         refresh();
         fetchChallenge();
       } else if (result.attempts_remaining === 0) {
-        // Out of attempts — refetch to get correct_answer
         fetchChallenge();
       } else {
-        // Incorrect — shake and update local state
         setShaking(true);
         setTimeout(() => setShaking(false), 500);
         setChallenge((c) =>
           c ? { ...c, attempts_used: result.attempt_number } : c,
         );
-        // Re-focus for next attempt
         setTimeout(() => inputRef.current?.focus(), 100);
       }
     } catch (err) {
@@ -167,7 +170,9 @@ export function ChallengePage() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto mb-3 size-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
-          <p className="text-sm text-muted-foreground">Loading today's challenge...</p>
+          <p className="text-sm text-muted-foreground">
+            Loading today's challenge...
+          </p>
         </div>
       </div>
     );
@@ -177,7 +182,7 @@ export function ChallengePage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
-          <Trophy className="mx-auto mb-3 size-10 text-muted-foreground/50" />
+          <Terminal className="mx-auto mb-3 size-10 text-muted-foreground/50" />
           <p className="text-lg font-medium">{loadError}</p>
           <p className="mt-1 text-sm text-muted-foreground">
             New challenges drop daily at midnight.
@@ -219,9 +224,35 @@ export function ChallengePage() {
 
         <CardContent className="grid gap-6">
           {/* Description */}
-          <p className="leading-relaxed whitespace-pre-wrap">
-            {challenge.description}
-          </p>
+          <p className="leading-relaxed">{challenge.description}</p>
+
+          {/* Code snippet */}
+          <div className="overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950">
+            <div className="flex items-center border-b border-neutral-800 bg-neutral-900 px-4 py-2">
+              <Badge
+                variant="outline"
+                className="border-neutral-700 bg-neutral-800 text-xs text-neutral-300"
+              >
+                {getLanguageLabel(challenge.language)}
+              </Badge>
+            </div>
+            <div className="overflow-x-auto p-4">
+              <pre className="text-sm leading-relaxed">
+                <code>
+                  {challenge.code_snippet.split("\n").map((line, i) => (
+                    <div key={i} className="flex">
+                      <span className="mr-6 inline-block w-6 select-none text-right text-neutral-600">
+                        {i + 1}
+                      </span>
+                      <span className="text-neutral-200">
+                        {line || " "}
+                      </span>
+                    </div>
+                  ))}
+                </code>
+              </pre>
+            </div>
+          </div>
 
           <Separator />
 
@@ -258,7 +289,7 @@ export function ChallengePage() {
             </p>
           </div>
 
-          {/* Hint status — locked message before 3 attempts */}
+          {/* Hint status */}
           {!done && !hint && (
             <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <Lightbulb className="size-3.5" />
@@ -315,13 +346,15 @@ export function ChallengePage() {
 
           {/* Correct answer reveal */}
           {challenge.correct_answer && (
-            <div className="animate-slide-up-fade rounded-lg border bg-card px-4 py-3">
-              <p className="mb-1 text-xs font-medium text-muted-foreground">
-                Answer
-              </p>
-              <p className="font-mono text-base font-semibold">
+            <div className="animate-slide-up-fade overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950">
+              <div className="border-b border-neutral-800 bg-neutral-900 px-4 py-2">
+                <p className="text-xs font-medium text-neutral-400">
+                  Expected Output
+                </p>
+              </div>
+              <pre className="p-4 text-sm text-green-400">
                 {challenge.correct_answer}
-              </p>
+              </pre>
             </div>
           )}
 
@@ -339,7 +372,7 @@ export function ChallengePage() {
             </div>
           )}
 
-          {/* Inline hint reveal (toggled by lightbulb button) */}
+          {/* Inline hint reveal */}
           {!done && hint && hintVisible && (
             <div className="animate-slide-up-fade flex items-start gap-2.5 rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-4 py-3 text-sm">
               <Lightbulb className="mt-0.5 size-4 shrink-0 text-yellow-500" />
@@ -354,54 +387,49 @@ export function ChallengePage() {
 
           {/* Input form */}
           {!done && (
-            <form
-              noValidate
-              onSubmit={handleSubmit}
-              className="grid gap-2"
-            >
+            <form noValidate onSubmit={handleSubmit} className="grid gap-2">
               <div className="flex items-center gap-2">
-              <Input
-                ref={inputRef}
-                value={answer}
-                onChange={(e) => {
-                  setAnswer(e.target.value);
-                  setAnswerError("");
-                }}
-                placeholder="Type your answer..."
-                disabled={submitting}
-                autoComplete="off"
-                className="flex-1"
-                aria-invalid={!!answerError || undefined}
-              />
-              {hint && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="lg"
-                  onClick={() => setHintVisible((v) => !v)}
-                  className={cn(
-                    "shrink-0",
-                    hintVisible
-                      ? "text-yellow-500"
-                      : "text-muted-foreground hover:text-yellow-500",
-                  )}
-                  aria-label={hintVisible ? "Hide hint" : "Show hint"}
-                >
-                  <Lightbulb className="size-4" />
-                </Button>
-              )}
-              <Button
-                type="submit"
-                disabled={submitting}
-                size="lg"
-              >
-                {submitting ? (
-                  <div className="size-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
-                ) : (
-                  <Send className="size-4" />
+                <Input
+                  ref={inputRef}
+                  value={answer}
+                  onChange={(e) => {
+                    setAnswer(e.target.value);
+                    setAnswerError("");
+                  }}
+                  placeholder="Type the expected output..."
+                  disabled={submitting}
+                  autoComplete="off"
+                  className="flex-1 font-mono"
+                  aria-invalid={!!answerError || undefined}
+                />
+                {hint && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="lg"
+                    onClick={() => setHintVisible((v) => !v)}
+                    className={cn(
+                      "shrink-0",
+                      hintVisible
+                        ? "text-yellow-500"
+                        : "text-muted-foreground hover:text-yellow-500",
+                    )}
+                    aria-label={hintVisible ? "Hide hint" : "Show hint"}
+                  >
+                    <Lightbulb className="size-4" />
+                  </Button>
                 )}
-              </Button>
+                <Button type="submit" disabled={submitting} size="lg">
+                  {submitting ? (
+                    <div className="size-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
+                  ) : (
+                    <Send className="size-4" />
+                  )}
+                </Button>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Output is case-sensitive
+              </p>
               {answerError && (
                 <p className="text-sm text-destructive">{answerError}</p>
               )}
@@ -419,12 +447,16 @@ export function ChallengePage() {
               </div>
               <Separator orientation="vertical" className="h-8" />
               <div>
-                <p className="text-lg font-bold">{user.stats.current_streak}</p>
+                <p className="text-lg font-bold">
+                  {user.stats.current_streak}
+                </p>
                 <p className="text-xs text-muted-foreground">Streak</p>
               </div>
               <Separator orientation="vertical" className="h-8" />
               <div>
-                <p className="text-lg font-bold">{user.stats.longest_streak}</p>
+                <p className="text-lg font-bold">
+                  {user.stats.longest_streak}
+                </p>
                 <p className="text-xs text-muted-foreground">Best</p>
               </div>
             </div>

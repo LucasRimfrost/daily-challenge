@@ -39,6 +39,14 @@ function NavLink({
 export function Navbar() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { pathname } = useLocation();
+
+  // Determine which game context we're in for archive/history links
+  const gamePrefix = pathname.startsWith("/code-output")
+    ? "/code-output"
+    : pathname.startsWith("/trivia")
+      ? "/trivia"
+      : null;
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
@@ -58,13 +66,13 @@ export function Navbar() {
               <Trophy className="size-4" />
               <span className="hidden sm:inline">Leaderboard</span>
             </NavLink>
-            {user && (
+            {user && gamePrefix && (
               <>
-                <NavLink to="/trivia/archive">
+                <NavLink to={`${gamePrefix}/archive`}>
                   <Archive className="size-4" />
                   <span className="hidden sm:inline">Archive</span>
                 </NavLink>
-                <NavLink to="/trivia/history">
+                <NavLink to={`${gamePrefix}/history`}>
                   <History className="size-4" />
                   <span className="hidden sm:inline">History</span>
                 </NavLink>

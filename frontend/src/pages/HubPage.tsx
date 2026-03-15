@@ -5,7 +5,8 @@ import { getGames } from "@/api/games";
 import { ApiRequestError } from "@/api/client";
 import type { Game } from "@/api/types";
 import { useAuth } from "@/hooks/useAuth";
-import { ChevronRight, Flame, Gamepad2, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ChevronRight, Flame, Gamepad2, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function HubPage() {
@@ -75,7 +76,7 @@ export function HubPage() {
 
       <div className="grid gap-4">
         {games.map((game) => (
-          <Link key={game.id} to={`/${game.id}`} className="group">
+          <Link key={game.id} to={`/${game.id.replace(/_/g, "-")}`} className="group">
             <Card className="transition-all duration-200 hover:shadow-md group-hover:border-primary/30">
               <CardContent className="flex items-center gap-4 p-5">
                 <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -88,11 +89,17 @@ export function HubPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  {user && (
+                  {user && game.id === "trivia" && (
                     <div className="flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-sm font-medium">
                       <Flame className="size-3.5 text-orange-500" />
                       <span>{user.stats.current_streak}</span>
                     </div>
+                  )}
+                  {game.id !== "trivia" && (
+                    <Badge variant="secondary" className="gap-1 text-xs">
+                      <Sparkles className="size-3" />
+                      New!
+                    </Badge>
                   )}
                   <ChevronRight className="size-5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                 </div>

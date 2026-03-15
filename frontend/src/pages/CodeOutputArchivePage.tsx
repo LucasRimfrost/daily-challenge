@@ -3,11 +3,11 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getArchive } from "@/api/trivia";
+import { getArchive } from "@/api/code-output";
 import { ApiRequestError } from "@/api/client";
-import type { ArchiveEntry } from "@/api/types";
+import type { CodeOutputArchiveEntry } from "@/api/types";
 import { cn } from "@/lib/utils";
-import { difficultyConfig } from "@/lib/game";
+import { difficultyConfig, getLanguageLabel } from "@/lib/game";
 import {
   Archive,
   Calendar,
@@ -19,7 +19,7 @@ import {
 
 type ChallengeStatus = "solved" | "failed" | "in_progress" | "not_attempted";
 
-function getStatus(entry: ArchiveEntry): ChallengeStatus {
+function getStatus(entry: CodeOutputArchiveEntry): ChallengeStatus {
   if (entry.is_solved) return "solved";
   if (entry.attempts_used >= entry.max_attempts) return "failed";
   if (entry.attempts_used > 0) return "in_progress";
@@ -56,8 +56,8 @@ const statusConfig: Record<
   },
 };
 
-export function ArchivePage() {
-  const [entries, setEntries] = useState<ArchiveEntry[]>([]);
+export function CodeOutputArchivePage() {
+  const [entries, setEntries] = useState<CodeOutputArchiveEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -66,7 +66,6 @@ export function ArchivePage() {
     setError("");
     try {
       const data = await getArchive();
-      // Sort most recent first
       data.sort(
         (a, b) =>
           new Date(b.scheduled_date).getTime() -
@@ -105,7 +104,12 @@ export function ArchivePage() {
         <div className="text-center">
           <Archive className="mx-auto mb-3 size-10 text-muted-foreground/50" />
           <p className="text-lg font-medium">{error}</p>
-          <Button variant="outline" size="sm" className="mt-4" onClick={fetchArchive}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={fetchArchive}
+          >
             Try again
           </Button>
         </div>
@@ -130,7 +134,9 @@ export function ArchivePage() {
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Archive</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          What's the Output? Archive
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {entries.length} past challenge{entries.length === 1 ? "" : "s"}
         </p>
@@ -146,7 +152,7 @@ export function ArchivePage() {
           return (
             <Link
               key={entry.id}
-              to={`/trivia/${entry.scheduled_date}`}
+              to={`/code-output/${entry.scheduled_date}`}
               className="group"
             >
               <Card
@@ -163,14 +169,25 @@ export function ArchivePage() {
                       <p className="truncate font-medium leading-tight">
                         {entry.title}
                       </p>
-                      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                        <Calendar className="size-3" />
-                        {entry.scheduled_date}
-                      </p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Calendar className="size-3" />
+                          {entry.scheduled_date}
+                        </p>
+                        <Badge
+                          variant="outline"
+                          className="border-neutral-700 bg-neutral-800 text-[10px] text-neutral-300"
+                        >
+                          {getLanguageLabel(entry.language)}
+                        </Badge>
+                      </div>
                     </div>
                     <Badge
                       variant="outline"
-                      className={cn("shrink-0 text-xs capitalize", diff.class)}
+                      className={cn(
+                        "shrink-0 text-xs capitalize",
+                        diff.class,
+                      )}
                     >
                       {diff.label}
                     </Badge>

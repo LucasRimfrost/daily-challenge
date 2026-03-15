@@ -8,6 +8,9 @@ import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { ChallengePage } from "@/pages/ChallengePage";
 import { ArchivePage } from "@/pages/ArchivePage";
 import { HistoryPage } from "@/pages/HistoryPage";
+import { CodeOutputPage } from "@/pages/CodeOutputPage";
+import { CodeOutputArchivePage } from "@/pages/CodeOutputArchivePage";
+import { CodeOutputHistoryPage } from "@/pages/CodeOutputHistoryPage";
 import { HubPage } from "@/pages/HubPage";
 import { LeaderboardPage } from "@/pages/LeaderboardPage";
 import { SettingsPage } from "@/pages/SettingsPage";
@@ -42,6 +45,10 @@ function App() {
             <Route path="/trivia/:date" element={<ChallengePage />} />
             <Route path="/trivia/archive" element={<ArchivePage />} />
             <Route path="/trivia/history" element={<HistoryPage />} />
+            <Route path="/code-output" element={<CodeOutputPage />} />
+            <Route path="/code-output/:date" element={<CodeOutputPage />} />
+            <Route path="/code-output/archive" element={<CodeOutputArchivePage />} />
+            <Route path="/code-output/history" element={<CodeOutputHistoryPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
 
