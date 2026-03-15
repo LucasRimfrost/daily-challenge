@@ -1,0 +1,7 @@
+[advisories]
+ignore = [
+    # rsa via sqlx-mysql — I only use Postgres, MySQL driver is an unused transitive dep.
+    # No fix available upstream. Re-evaluate periodically.
+    # https://rustsec.org/advisories/RUSTSEC-2023-0071
+    "RUSTSEC-2023-0071",
+]

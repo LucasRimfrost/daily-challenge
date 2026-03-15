@@ -5,6 +5,7 @@
 .env
 .env.*
 !.env.example
+!.env.test.example
 
 # ── Frontend ─────────────────────────────────────────────────────────────────
 /frontend/node_modules/

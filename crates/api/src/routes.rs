@@ -1,6 +1,9 @@
 use axum::{Router, extract::DefaultBodyLimit, http::header, middleware};
 use tower_governor::GovernorLayer;
-use tower_http::set_header::SetResponseHeaderLayer;
+use tower_http::{
+    services::{ServeDir, ServeFile},
+    set_header::SetResponseHeaderLayer,
+};
 
 use crate::{AppState, handlers, middleware::logging, middleware::rate_limit::RateLimiters};
 
@@ -51,5 +54,8 @@ pub fn router(state: AppState) -> Router {
             header::HeaderName::from_static("permissions-policy"),
             header::HeaderValue::from_static("camera=(), microphone=(), geolocation=()"),
         ))
+        .fallback_service(
+            ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")),
+        )
         .with_state(state)
 }

@@ -8,7 +8,6 @@ shared = { path = "crates/shared" }
 db = { path = "crates/db" }
 auth = { path = "crates/auth" }
 
-
 # External crates
 argon2 = "0.5"
 axum = "0.8"
@@ -34,6 +33,7 @@ tower-http = { version = "0.6", features = [
     "trace",
     "set-header",
     "sensitive-headers",
+    "fs",
 ] }
 tower_governor = { version = "0.8", features = ["axum", "tracing"] }
 governor = "0.10"
@@ -45,3 +45,19 @@ tracing-subscriber = { version = "0.3", features = [
 ] }
 uuid = { version = "1", features = ["v4", "serde"] }
 validator = { version = "0.19", features = ["derive"] }
+reqwest = { version = "0.12", features = ["json", "cookies"] }
+serde_json = "1"
+serial_test = "3"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.test.package.argon2]
+opt-level = 3
