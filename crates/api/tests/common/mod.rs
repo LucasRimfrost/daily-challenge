@@ -168,6 +168,10 @@ async fn cleanup_db(pool: &PgPool) {
         .execute(pool)
         .await
         .expect("Failed to clean user_stats");
+    sqlx::query("DELETE FROM refresh_tokens")
+        .execute(pool)
+        .await
+        .expect("Failed to clean refresh_tokens");
     sqlx::query("DELETE FROM challenges")
         .execute(pool)
         .await

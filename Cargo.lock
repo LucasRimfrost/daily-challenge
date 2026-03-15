@@ -103,9 +103,13 @@ name = "auth"
 version = "0.1.0"
 dependencies = [
  "argon2",
+ "base64",
  "chrono",
+ "getrandom 0.3.4",
+ "hex",
  "jsonwebtoken",
  "serde",
+ "sha2",
  "shared",
  "tracing",
 ]

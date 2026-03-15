@@ -365,3 +365,87 @@ pub async fn find_past_challenges_with_status(
     tracing::debug!(count = results.len(), "fetched past challenges");
     Ok(results)
 }
+
+// ── Refresh tokens ──────────────────────────────────────────────────────
+
+#[tracing::instrument(skip(pool, token_hash))]
+pub async fn create_refresh_token(
+    pool: &PgPool,
+    user_id: Uuid,
+    token_hash: &str,
+    expires_at: chrono::DateTime<chrono::Utc>,
+) -> AppResult<()> {
+    sqlx::query!(
+        r#"
+        INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
+        VALUES ($1, $2, $3)
+        "#,
+        user_id,
+        token_hash,
+        expires_at,
+    )
+    .execute(pool)
+    .await
+    .map_err(AppError::from)?;
+
+    tracing::debug!(%user_id, "refresh token created");
+    Ok(())
+}
+
+#[tracing::instrument(skip(pool, token_hash))]
+pub async fn find_refresh_token_by_hash(
+    pool: &PgPool,
+    token_hash: &str,
+) -> AppResult<Option<crate::models::RefreshToken>> {
+    let result = sqlx::query_as!(
+        crate::models::RefreshToken,
+        r#"
+        SELECT id, user_id, token_hash, expires_at, created_at, revoked_at
+        FROM refresh_tokens
+        WHERE token_hash = $1
+        "#,
+        token_hash,
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(AppError::from)?;
+
+    tracing::debug!(found = result.is_some(), "refresh token lookup");
+    Ok(result)
+}
+
+#[tracing::instrument(skip(pool))]
+pub async fn revoke_refresh_token(pool: &PgPool, token_id: Uuid) -> AppResult<()> {
+    sqlx::query!(
+        r#"
+        UPDATE refresh_tokens
+        SET revoked_at = now()
+        WHERE id = $1 AND revoked_at IS NULL
+        "#,
+        token_id,
+    )
+    .execute(pool)
+    .await
+    .map_err(AppError::from)?;
+
+    tracing::debug!(%token_id, "refresh token revoked");
+    Ok(())
+}
+
+#[tracing::instrument(skip(pool))]
+pub async fn revoke_all_user_refresh_tokens(pool: &PgPool, user_id: Uuid) -> AppResult<()> {
+    let result = sqlx::query!(
+        r#"
+        UPDATE refresh_tokens
+        SET revoked_at = now()
+        WHERE user_id = $1 AND revoked_at IS NULL
+        "#,
+        user_id,
+    )
+    .execute(pool)
+    .await
+    .map_err(AppError::from)?;
+
+    tracing::info!(%user_id, revoked = result.rows_affected(), "all refresh tokens revoked");
+    Ok(())
+}
