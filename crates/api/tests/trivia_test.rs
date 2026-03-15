@@ -15,7 +15,7 @@ async fn today_returns_challenge_when_one_exists() {
 
     let resp = app
         .client
-        .get(app.url("/api/v1/challenge/today"))
+        .get(app.url("/api/v1/trivia/today"))
         .send()
         .await
         .unwrap();
@@ -43,7 +43,7 @@ async fn today_returns_404_when_no_challenge_scheduled() {
     // No challenge seeded
     let resp = app
         .client
-        .get(app.url("/api/v1/challenge/today"))
+        .get(app.url("/api/v1/trivia/today"))
         .send()
         .await
         .unwrap();
@@ -58,7 +58,7 @@ async fn today_requires_auth() {
 
     let client = reqwest::Client::new();
     let resp = client
-        .get(app.url("/api/v1/challenge/today"))
+        .get(app.url("/api/v1/trivia/today"))
         .send()
         .await
         .unwrap();
@@ -77,7 +77,7 @@ async fn submit_correct_answer_returns_is_correct() {
 
     let resp = app
         .client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({
             "challenge_id": challenge_id,
             "answer": "4"
@@ -103,7 +103,7 @@ async fn submit_incorrect_answer_returns_not_correct() {
 
     let resp = app
         .client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({
             "challenge_id": challenge_id,
             "answer": "5"
@@ -135,7 +135,7 @@ async fn submit_is_case_insensitive() {
 
     let resp = app
         .client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({
             "challenge_id": challenge_id,
             "answer": "hello"
@@ -157,7 +157,7 @@ async fn submit_trims_whitespace() {
 
     let resp = app
         .client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({
             "challenge_id": challenge_id,
             "answer": "  4  "
@@ -179,7 +179,7 @@ async fn submit_rejects_after_already_solved() {
 
     // Solve it
     app.client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({ "challenge_id": challenge_id, "answer": "4" }))
         .send()
         .await
@@ -188,7 +188,7 @@ async fn submit_rejects_after_already_solved() {
     // Try again
     let resp = app
         .client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({ "challenge_id": challenge_id, "answer": "4" }))
         .send()
         .await
@@ -207,7 +207,7 @@ async fn submit_rejects_after_max_attempts_exhausted() {
     // Use all 3 attempts with wrong answers
     for _ in 0..3 {
         app.client
-            .post(app.url("/api/v1/challenge/submit"))
+            .post(app.url("/api/v1/trivia/submit"))
             .json(&json!({ "challenge_id": challenge_id, "answer": "wrong" }))
             .send()
             .await
@@ -217,7 +217,7 @@ async fn submit_rejects_after_max_attempts_exhausted() {
     // 4th attempt should be rejected
     let resp = app
         .client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({ "challenge_id": challenge_id, "answer": "4" }))
         .send()
         .await
@@ -245,7 +245,7 @@ async fn submit_reveals_hint_on_third_wrong_attempt() {
         .await;
 
     // Add a hint directly
-    sqlx::query("UPDATE challenges SET hint = 'Think simple math' WHERE id = $1")
+    sqlx::query("UPDATE trivia_challenges SET hint = 'Think simple math' WHERE id = $1")
         .bind(challenge_id)
         .execute(&app.pool)
         .await
@@ -255,7 +255,7 @@ async fn submit_reveals_hint_on_third_wrong_attempt() {
     for i in 1..=2 {
         let resp = app
             .client
-            .post(app.url("/api/v1/challenge/submit"))
+            .post(app.url("/api/v1/trivia/submit"))
             .json(&json!({ "challenge_id": challenge_id, "answer": "wrong" }))
             .send()
             .await
@@ -267,7 +267,7 @@ async fn submit_reveals_hint_on_third_wrong_attempt() {
     // Wrong attempt 3 — hint revealed
     let resp = app
         .client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({ "challenge_id": challenge_id, "answer": "wrong" }))
         .send()
         .await
@@ -285,7 +285,7 @@ async fn submit_for_nonexistent_challenge_returns_404() {
     let fake_id = uuid::Uuid::new_v4();
     let resp = app
         .client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({ "challenge_id": fake_id, "answer": "4" }))
         .send()
         .await
@@ -302,7 +302,7 @@ async fn submit_requires_auth() {
 
     let client = reqwest::Client::new();
     let resp = client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({ "challenge_id": challenge_id, "answer": "4" }))
         .send()
         .await
@@ -322,7 +322,7 @@ async fn today_reveals_answer_after_solving() {
 
     // Solve it
     app.client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({ "challenge_id": challenge_id, "answer": "4" }))
         .send()
         .await
@@ -331,7 +331,7 @@ async fn today_reveals_answer_after_solving() {
     // Fetch today — answer should now be visible
     let resp = app
         .client
-        .get(app.url("/api/v1/challenge/today"))
+        .get(app.url("/api/v1/trivia/today"))
         .send()
         .await
         .unwrap();
@@ -351,7 +351,7 @@ async fn today_reveals_answer_after_exhausting_attempts() {
 
     for _ in 0..3 {
         app.client
-            .post(app.url("/api/v1/challenge/submit"))
+            .post(app.url("/api/v1/trivia/submit"))
             .json(&json!({ "challenge_id": challenge_id, "answer": "wrong" }))
             .send()
             .await
@@ -360,7 +360,7 @@ async fn today_reveals_answer_after_exhausting_attempts() {
 
     let resp = app
         .client
-        .get(app.url("/api/v1/challenge/today"))
+        .get(app.url("/api/v1/trivia/today"))
         .send()
         .await
         .unwrap();
@@ -382,7 +382,7 @@ async fn solving_today_updates_user_stats() {
 
     // Solve it
     app.client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({ "challenge_id": challenge_id, "answer": "4" }))
         .send()
         .await
@@ -415,7 +415,7 @@ async fn wrong_attempts_increment_total_attempts() {
     // Two wrong attempts
     for _ in 0..2 {
         app.client
-            .post(app.url("/api/v1/challenge/submit"))
+            .post(app.url("/api/v1/trivia/submit"))
             .json(&json!({ "challenge_id": challenge_id, "answer": "wrong" }))
             .send()
             .await
@@ -447,7 +447,7 @@ async fn by_date_returns_challenge_for_past_date() {
 
     let resp = app
         .client
-        .get(app.url("/api/v1/challenge/2025-01-15"))
+        .get(app.url("/api/v1/trivia/2025-01-15"))
         .send()
         .await
         .unwrap();
@@ -466,7 +466,7 @@ async fn by_date_returns_404_for_date_without_challenge() {
 
     let resp = app
         .client
-        .get(app.url("/api/v1/challenge/2099-12-31"))
+        .get(app.url("/api/v1/trivia/2099-12-31"))
         .send()
         .await
         .unwrap();
@@ -484,7 +484,7 @@ async fn history_returns_empty_for_new_user() {
 
     let resp = app
         .client
-        .get(app.url("/api/v1/challenge/history"))
+        .get(app.url("/api/v1/trivia/history"))
         .send()
         .await
         .unwrap();
@@ -504,7 +504,7 @@ async fn history_includes_submitted_challenges() {
 
     // Submit an answer
     app.client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({ "challenge_id": challenge_id, "answer": "4" }))
         .send()
         .await
@@ -512,7 +512,7 @@ async fn history_includes_submitted_challenges() {
 
     let resp = app
         .client
-        .get(app.url("/api/v1/challenge/history"))
+        .get(app.url("/api/v1/trivia/history"))
         .send()
         .await
         .unwrap();
@@ -532,7 +532,7 @@ async fn history_respects_limit_param() {
 
     let resp = app
         .client
-        .get(app.url("/api/v1/challenge/history?limit=5"))
+        .get(app.url("/api/v1/trivia/history?limit=5"))
         .send()
         .await
         .unwrap();
@@ -553,7 +553,7 @@ async fn archive_returns_past_challenges() {
 
     let resp = app
         .client
-        .get(app.url("/api/v1/challenge/archive"))
+        .get(app.url("/api/v1/trivia/archive"))
         .send()
         .await
         .unwrap();
@@ -578,7 +578,7 @@ async fn archive_does_not_include_today() {
 
     let resp = app
         .client
-        .get(app.url("/api/v1/challenge/archive"))
+        .get(app.url("/api/v1/trivia/archive"))
         .send()
         .await
         .unwrap();

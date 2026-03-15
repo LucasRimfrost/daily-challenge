@@ -119,9 +119,9 @@ impl TestApp {
         scheduled_date: chrono::NaiveDate,
     ) -> uuid::Uuid {
         let rec: (uuid::Uuid,) = sqlx::query_as(
-            "INSERT INTO challenges (title, description, difficulty, expected_answer, max_attempts, scheduled_date)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id"
+            "INSERT INTO trivia_challenges (title, description, difficulty, expected_answer, max_attempts, scheduled_date)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             RETURNING id"
         )
         .bind(title)
         .bind(description)
@@ -160,14 +160,14 @@ impl TestApp {
 /// Delete all data from every table, respecting foreign key order.
 /// Runs before each test so every test starts with a clean slate.
 async fn cleanup_db(pool: &PgPool) {
-    sqlx::query("DELETE FROM submissions")
+    sqlx::query("DELETE FROM trivia_submissions")
         .execute(pool)
         .await
-        .expect("Failed to clean submissions");
-    sqlx::query("DELETE FROM user_stats")
+        .expect("Failed to clean trivia_submissions");
+    sqlx::query("DELETE FROM trivia_stats")
         .execute(pool)
         .await
-        .expect("Failed to clean user_stats");
+        .expect("Failed to clean trivia_stats");
     sqlx::query("DELETE FROM refresh_tokens")
         .execute(pool)
         .await
@@ -176,10 +176,10 @@ async fn cleanup_db(pool: &PgPool) {
         .execute(pool)
         .await
         .expect("Failed to clean password_reset_tokens");
-    sqlx::query("DELETE FROM challenges")
+    sqlx::query("DELETE FROM trivia_challenges")
         .execute(pool)
         .await
-        .expect("Failed to clean challenges");
+        .expect("Failed to clean trivia_challenges");
     sqlx::query("DELETE FROM users")
         .execute(pool)
         .await

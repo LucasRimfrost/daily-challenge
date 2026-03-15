@@ -34,12 +34,12 @@ pub fn router(state: AppState) -> Router {
 
     let auth_routes = Router::new().merge(auth_strict).merge(auth_normal);
 
-    let challenge_routes = handlers::challenge::router().layer(DefaultBodyLimit::max(64 * 1024));
+    let trivia_routes = handlers::trivia::router().layer(DefaultBodyLimit::max(64 * 1024));
 
     let routes = Router::new()
         .merge(handlers::health::router())
         .nest("/auth", auth_routes)
-        .nest("/challenge", challenge_routes)
+        .nest("/trivia", trivia_routes)
         .nest("/leaderboard", handlers::leaderboard::router());
 
     let allowed_origin = state

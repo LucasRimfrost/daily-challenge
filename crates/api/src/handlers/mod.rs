@@ -1,4 +1,5 @@
 pub mod auth;
-pub mod challenge;
+pub mod games;
 pub mod health;
 pub mod leaderboard;
+pub mod trivia;

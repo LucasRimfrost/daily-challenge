@@ -45,7 +45,7 @@ async fn leaderboard_shows_user_after_solving_challenge() {
 
     // Solve the challenge
     app.client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({ "challenge_id": challenge_id, "answer": "4" }))
         .send()
         .await
@@ -93,7 +93,7 @@ async fn leaderboard_orders_by_streak_then_solved() {
     // User A: solves challenge
     app.register("user_a", "a@example.com", "password123").await;
     app.client
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({ "challenge_id": challenge_id, "answer": "4" }))
         .send()
         .await
@@ -118,7 +118,7 @@ async fn leaderboard_orders_by_streak_then_solved() {
         .unwrap();
 
     client_b
-        .post(app.url("/api/v1/challenge/submit"))
+        .post(app.url("/api/v1/trivia/submit"))
         .json(&json!({ "challenge_id": challenge_id, "answer": "wrong" }))
         .send()
         .await

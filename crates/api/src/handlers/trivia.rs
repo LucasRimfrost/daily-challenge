@@ -32,7 +32,7 @@ pub struct SubmitRequest {
 // ── Response types ──────────────────────────────────────────────────────────
 
 #[derive(Serialize)]
-pub struct TodayChallengeResponse {
+pub struct TriviaChallengeResponse {
     pub id: Uuid,
     pub title: String,
     pub description: String,
@@ -91,12 +91,12 @@ pub async fn today(
     let user_id = auth_user.id;
     let date = Utc::now().date_naive();
 
-    tracing::debug!(user_id = %user_id, %date, "fetching today's challenge");
+    tracing::debug!(user_id = %user_id, %date, "fetching today's trivia challenge");
 
     let challenge = find_trivia_challenge_by_date(&state.pool, date)
         .await?
         .ok_or_else(|| {
-            tracing::warn!(%date, "no challenge scheduled for today");
+            tracing::warn!(%date, "no trivia challenge scheduled for today");
             AppError::NotFound
         })?;
 
@@ -115,7 +115,7 @@ pub async fn today(
 
     Ok((
         StatusCode::OK,
-        Json(TodayChallengeResponse {
+        Json(TriviaChallengeResponse {
             id: challenge.id,
             title: challenge.title,
             description: challenge.description,
@@ -142,13 +142,13 @@ pub async fn submit(
     tracing::info!(
         user_id = %user_id,
         challenge_id = %challenge_id,
-        "submission attempt"
+        "trivia submission attempt"
     );
 
     let challenge = find_trivia_challenge_by_id(&state.pool, challenge_id)
         .await?
         .ok_or_else(|| {
-            tracing::warn!(challenge_id = %challenge_id, "challenge not found for submission");
+            tracing::warn!(challenge_id = %challenge_id, "trivia challenge not found");
             AppError::NotFound
         })?;
 
@@ -191,14 +191,14 @@ pub async fn submit(
             user_id = %user_id,
             challenge_id = %challenge_id,
             attempt_number,
-            "challenge solved"
+            "trivia challenge solved"
         );
     } else {
         tracing::debug!(
             user_id = %user_id,
             challenge_id = %challenge_id,
             attempt_number,
-            "incorrect answer"
+            "incorrect trivia answer"
         );
     }
 
@@ -228,7 +228,7 @@ pub async fn history(
 ) -> AppResult<impl IntoResponse> {
     let limit = params.limit.unwrap_or(30);
 
-    tracing::debug!(user_id = %auth_user.id, limit, "fetching challenge history");
+    tracing::debug!(user_id = %auth_user.id, limit, "fetching trivia history");
 
     let history = find_trivia_challenge_history(&state.pool, auth_user.id, limit).await?;
 
@@ -242,7 +242,7 @@ pub async fn archive(
 ) -> AppResult<impl IntoResponse> {
     let today = Utc::now().date_naive();
 
-    tracing::debug!(user_id = %auth_user.id, "fetching challenge archive");
+    tracing::debug!(user_id = %auth_user.id, "fetching trivia archive");
 
     let rows = find_trivia_past_challenges(&state.pool, auth_user.id, today).await?;
 
@@ -268,12 +268,12 @@ pub async fn by_date(
     auth_user: AuthUser,
     Path(date): Path<chrono::NaiveDate>,
 ) -> AppResult<impl IntoResponse> {
-    tracing::debug!(user_id = %auth_user.id, %date, "fetching challenge by date");
+    tracing::debug!(user_id = %auth_user.id, %date, "fetching trivia by date");
 
     let challenge = find_trivia_challenge_by_date(&state.pool, date)
         .await?
         .ok_or_else(|| {
-            tracing::warn!(%date, "no challenge found for date");
+            tracing::warn!(%date, "no trivia challenge found for date");
             AppError::NotFound
         })?;
 
@@ -293,7 +293,7 @@ pub async fn by_date(
 
     Ok((
         StatusCode::OK,
-        Json(TodayChallengeResponse {
+        Json(TriviaChallengeResponse {
             id: challenge.id,
             title: challenge.title,
             description: challenge.description,
