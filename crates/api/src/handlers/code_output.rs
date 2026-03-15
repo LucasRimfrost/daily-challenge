@@ -18,6 +18,15 @@ use uuid::Uuid;
 
 use crate::{AppState, middleware::AuthUser};
 
+/// Normalize code output for comparison: unify quote style and spacing
+/// so that e.g. `["a", "b"]` and `['a', 'b']` and `['a','b']` all match.
+fn normalize_output(s: &str) -> String {
+    s.trim()
+        .replace('"', "'")
+        .replace(", ", ",")
+        .replace(": ", ":")
+}
+
 // ── Request types ──────────────────────────────────────────────────────────
 
 #[derive(Deserialize)]
@@ -172,10 +181,9 @@ pub async fn submit(
 
     let attempt_number = submissions.len() as i32 + 1;
 
-    // Exact match for output (trimmed, but case-sensitive — output matters)
-    let user_answer = payload.answer.trim().to_string();
-    let expected = challenge.expected_output.trim().to_string();
-    let is_correct = user_answer == expected;
+    // Case-sensitive match with normalized quotes and spacing
+    let is_correct =
+        normalize_output(&payload.answer) == normalize_output(&challenge.expected_output);
 
     create_code_output_submission(
         &state.pool,

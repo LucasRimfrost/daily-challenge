@@ -79,7 +79,7 @@ export function CodeOutputPage() {
     try {
       const data = date ? await getChallengeByDate(date) : await getToday();
       setChallenge(data);
-      if (data.attempts_used >= 3) {
+      if (data.attempts_used >= 2) {
         setHint(data.hint);
       }
     } catch (err) {
@@ -293,7 +293,7 @@ export function CodeOutputPage() {
           {!done && !hint && (
             <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <Lightbulb className="size-3.5" />
-              Hint unlocks after 3 failed attempts
+              Hint unlocks after 2 failed attempts
             </p>
           )}
 

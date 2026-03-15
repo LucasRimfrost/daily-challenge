@@ -156,6 +156,7 @@ impl TestApp {
         .await
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn seed_code_output_challenge(
         &self,
         title: &str,
