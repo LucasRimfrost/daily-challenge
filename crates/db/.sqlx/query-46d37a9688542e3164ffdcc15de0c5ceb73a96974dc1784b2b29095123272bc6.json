@@ -1,0 +1,65 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT * FROM (\n            SELECT DISTINCT ON (s.challenge_id)\n                   c.id as challenge_id, c.title, c.language,\n                   c.difficulty as \"difficulty: Difficulty\",\n                   c.scheduled_date, s.is_correct,\n                   s.attempt_number, s.submitted_at\n            FROM code_output_submissions s\n            JOIN code_output_challenges c ON c.id = s.challenge_id\n            WHERE s.user_id = $1\n            ORDER BY s.challenge_id, s.is_correct DESC, s.attempt_number DESC\n        ) history\n        ORDER BY scheduled_date DESC\n        LIMIT $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "challenge_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "language",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "difficulty: Difficulty",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "scheduled_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 5,
+        "name": "is_correct",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "attempt_number",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "submitted_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "46d37a9688542e3164ffdcc15de0c5ceb73a96974dc1784b2b29095123272bc6"
+}

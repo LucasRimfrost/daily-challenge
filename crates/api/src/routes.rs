@@ -36,11 +36,15 @@ pub fn router(state: AppState) -> Router {
 
     let trivia_routes = handlers::trivia::router().layer(DefaultBodyLimit::max(64 * 1024));
 
+    let code_output_routes =
+        handlers::code_output::router().layer(DefaultBodyLimit::max(64 * 1024));
+
     let routes = Router::new()
         .merge(handlers::health::router())
         .nest("/auth", auth_routes)
         .nest("/games", handlers::games::router())
         .nest("/trivia", trivia_routes)
+        .nest("/code-output", code_output_routes)
         .nest("/leaderboard", handlers::leaderboard::router());
 
     let allowed_origin = state

@@ -119,3 +119,65 @@ pub struct PasswordResetToken {
     pub created_at: DateTime<Utc>,
     pub used_at: Option<DateTime<Utc>>,
 }
+
+// ── Code Output game ────────────────────────────────────────────────────────
+
+#[derive(Debug, FromRow, Serialize)]
+pub struct CodeOutputChallenge {
+    pub id: Uuid,
+    pub title: String,
+    pub description: String,
+    pub language: String,
+    pub code_snippet: String,
+    pub expected_output: String,
+    pub difficulty: Difficulty,
+    pub hint: Option<String>,
+    pub max_attempts: i32,
+    pub scheduled_date: chrono::NaiveDate,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, FromRow, Serialize)]
+pub struct CodeOutputSubmission {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub challenge_id: Uuid,
+    pub answer: String,
+    pub is_correct: bool,
+    pub attempt_number: i32,
+    pub submitted_at: DateTime<Utc>,
+}
+
+#[derive(Debug, FromRow, Serialize)]
+pub struct CodeOutputStats {
+    pub user_id: Uuid,
+    pub current_streak: i32,
+    pub longest_streak: i32,
+    pub total_solved: i32,
+    pub total_attempts: i32,
+    pub last_solved_date: Option<chrono::NaiveDate>,
+}
+
+#[derive(Debug, FromRow, Serialize)]
+pub struct CodeOutputChallengeHistory {
+    pub challenge_id: Uuid,
+    pub title: String,
+    pub language: String,
+    pub difficulty: Difficulty,
+    pub scheduled_date: chrono::NaiveDate,
+    pub is_correct: bool,
+    pub attempt_number: i32,
+    pub submitted_at: DateTime<Utc>,
+}
+
+#[derive(Debug, FromRow)]
+pub struct CodeOutputArchiveRow {
+    pub id: Uuid,
+    pub title: String,
+    pub language: String,
+    pub difficulty: Difficulty,
+    pub scheduled_date: chrono::NaiveDate,
+    pub max_attempts: i32,
+    pub is_solved: bool,
+    pub attempts_used: i64,
+}

@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT u.username, s.current_streak, s.longest_streak, s.total_solved\n        FROM code_output_stats s\n        JOIN users u ON u.id = s.user_id\n        ORDER BY s.current_streak DESC, s.total_solved DESC\n        LIMIT $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "username",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "current_streak",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "longest_streak",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "total_solved",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "bc6ad92cbd2129b766a630eb9c9f2d6d8be2e37b6a45dfde6b53f2af5396ecc6"
+}

@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT user_id, current_streak, longest_streak,\n               total_solved, total_attempts, last_solved_date\n        FROM code_output_stats\n        WHERE user_id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "current_streak",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "longest_streak",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "total_solved",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "total_attempts",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "last_solved_date",
+        "type_info": "Date"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "d43b8d6232d89219c4704b6e81881cab1e9d90498f534b326a850fa64a2534bc"
+}

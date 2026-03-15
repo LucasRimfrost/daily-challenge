@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, title, description, language, code_snippet,\n               expected_output, difficulty as \"difficulty: Difficulty\",\n               hint, max_attempts, scheduled_date, created_at\n        FROM code_output_challenges\n        WHERE scheduled_date = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "language",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "code_snippet",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "expected_output",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "difficulty: Difficulty",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "hint",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "max_attempts",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "scheduled_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "86a2aba13f359b55ecfd682dab13eff20e6dabd3b6af834042d96bc9a044c042"
+}
