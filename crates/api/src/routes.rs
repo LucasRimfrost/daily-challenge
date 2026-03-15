@@ -19,7 +19,7 @@ pub fn router(state: AppState) -> Router {
         .nest("/challenge", handlers::challenge::router())
         .nest("/leaderboard", handlers::leaderboard::router());
 
-    Router::new()
+    let app = Router::new()
         .nest("/api/v1", routes)
         // ── Observability (outermost → innermost) ───────────────────
         .layer(logging::sensitive_headers_layer())
@@ -53,9 +53,14 @@ pub fn router(state: AppState) -> Router {
         .layer(SetResponseHeaderLayer::overriding(
             header::HeaderName::from_static("permissions-policy"),
             header::HeaderValue::from_static("camera=(), microphone=(), geolocation=()"),
-        ))
-        .fallback_service(
-            ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")),
+        ));
+
+    if let Some(ref dir) = state.config.static_dir {
+        app.fallback_service(
+            ServeDir::new(dir).not_found_service(ServeFile::new(format!("{}/index.html", dir))),
         )
         .with_state(state)
+    } else {
+        app.with_state(state)
+    }
 }

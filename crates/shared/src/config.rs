@@ -7,6 +7,7 @@ pub struct Config {
     pub jwt_access_token_expiry_minutes: i64,
     pub host: String,
     pub port: String,
+    pub static_dir: Option<String>,
 }
 
 impl Config {
@@ -19,6 +20,7 @@ impl Config {
                 .expect("JWT_ACCESS_TOKEN_EXPIRY_MINUTES must be a valid number"),
             host: env::var("BACKEND_HOST")?,
             port: env::var("BACKEND_PORT")?,
+            static_dir: env::var("STATIC_DIR").ok(),
         })
     }
 }

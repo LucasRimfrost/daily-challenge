@@ -1,0 +1,29 @@
+# Build artifacts
+target/
+
+# Frontend dependencies
+frontend/node_modules/
+frontend/dist/
+node_modules/
+
+# Git
+.git/
+.github/
+
+# Environment files
+.env
+.env.*
+
+# Documentation
+*.md
+LICENSE
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
