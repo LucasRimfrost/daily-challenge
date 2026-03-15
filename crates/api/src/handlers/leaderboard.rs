@@ -5,7 +5,7 @@ use axum::{
     response::IntoResponse,
     routing::get,
 };
-use db::queries::find_leaderboard;
+use db::queries::find_trivia_leaderboard;
 use serde::Deserialize;
 use shared::error::AppResult;
 
@@ -29,7 +29,7 @@ pub async fn leaderboard(
 
     tracing::debug!(limit, "fetching leaderboard");
 
-    let leaderboard = find_leaderboard(&state.pool, limit).await?;
+    let leaderboard = find_trivia_leaderboard(&state.pool, limit).await?;
 
     Ok((StatusCode::OK, Json(leaderboard)))
 }

@@ -9,9 +9,10 @@ use chrono::Utc;
 use db::{
     models::Difficulty,
     queries::{
-        create_submission, find_challenge_by_date, find_challenge_by_id,
-        find_past_challenges_with_status, find_submissions_by_user_and_challenge,
-        find_user_challenge_history, increment_total_attempts, upsert_user_stats_on_solve,
+        create_trivia_submission, find_trivia_challenge_by_date, find_trivia_challenge_by_id,
+        find_trivia_challenge_history, find_trivia_past_challenges,
+        find_trivia_submissions_by_user_and_challenge, increment_trivia_attempts,
+        upsert_trivia_stats_on_solve,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -92,7 +93,7 @@ pub async fn today(
 
     tracing::debug!(user_id = %user_id, %date, "fetching today's challenge");
 
-    let challenge = find_challenge_by_date(&state.pool, date)
+    let challenge = find_trivia_challenge_by_date(&state.pool, date)
         .await?
         .ok_or_else(|| {
             tracing::warn!(%date, "no challenge scheduled for today");
@@ -100,7 +101,7 @@ pub async fn today(
         })?;
 
     let submissions =
-        find_submissions_by_user_and_challenge(&state.pool, user_id, challenge.id).await?;
+        find_trivia_submissions_by_user_and_challenge(&state.pool, user_id, challenge.id).await?;
 
     let is_solved = submissions.iter().any(|s| s.is_correct);
     let attempts_used = submissions.len() as i32;
@@ -144,7 +145,7 @@ pub async fn submit(
         "submission attempt"
     );
 
-    let challenge = find_challenge_by_id(&state.pool, challenge_id)
+    let challenge = find_trivia_challenge_by_id(&state.pool, challenge_id)
         .await?
         .ok_or_else(|| {
             tracing::warn!(challenge_id = %challenge_id, "challenge not found for submission");
@@ -152,7 +153,7 @@ pub async fn submit(
         })?;
 
     let submissions =
-        find_submissions_by_user_and_challenge(&state.pool, user_id, challenge.id).await?;
+        find_trivia_submissions_by_user_and_challenge(&state.pool, user_id, challenge.id).await?;
 
     if submissions.iter().any(|s| s.is_correct) {
         tracing::debug!(user_id = %user_id, challenge_id = %challenge_id, "rejected — already solved");
@@ -169,7 +170,7 @@ pub async fn submit(
     let challenge_answer = challenge.expected_answer.trim().to_lowercase();
     let is_correct = user_answer == challenge_answer;
 
-    create_submission(
+    create_trivia_submission(
         &state.pool,
         user_id,
         challenge.id,
@@ -179,12 +180,12 @@ pub async fn submit(
     )
     .await?;
 
-    increment_total_attempts(&state.pool, user_id).await?;
+    increment_trivia_attempts(&state.pool, user_id).await?;
 
     if is_correct {
         let today = Utc::now().date_naive();
         if challenge.scheduled_date == today {
-            upsert_user_stats_on_solve(&state.pool, user_id, today).await?;
+            upsert_trivia_stats_on_solve(&state.pool, user_id, today).await?;
         }
         tracing::info!(
             user_id = %user_id,
@@ -229,7 +230,7 @@ pub async fn history(
 
     tracing::debug!(user_id = %auth_user.id, limit, "fetching challenge history");
 
-    let history = find_user_challenge_history(&state.pool, auth_user.id, limit).await?;
+    let history = find_trivia_challenge_history(&state.pool, auth_user.id, limit).await?;
 
     Ok((StatusCode::OK, Json(history)))
 }
@@ -243,7 +244,7 @@ pub async fn archive(
 
     tracing::debug!(user_id = %auth_user.id, "fetching challenge archive");
 
-    let rows = find_past_challenges_with_status(&state.pool, auth_user.id, today).await?;
+    let rows = find_trivia_past_challenges(&state.pool, auth_user.id, today).await?;
 
     let entries: Vec<ArchiveEntry> = rows
         .into_iter()
@@ -269,7 +270,7 @@ pub async fn by_date(
 ) -> AppResult<impl IntoResponse> {
     tracing::debug!(user_id = %auth_user.id, %date, "fetching challenge by date");
 
-    let challenge = find_challenge_by_date(&state.pool, date)
+    let challenge = find_trivia_challenge_by_date(&state.pool, date)
         .await?
         .ok_or_else(|| {
             tracing::warn!(%date, "no challenge found for date");
@@ -277,7 +278,8 @@ pub async fn by_date(
         })?;
 
     let submissions =
-        find_submissions_by_user_and_challenge(&state.pool, auth_user.id, challenge.id).await?;
+        find_trivia_submissions_by_user_and_challenge(&state.pool, auth_user.id, challenge.id)
+            .await?;
 
     let is_solved = submissions.iter().any(|s| s.is_correct);
     let attempts_used = submissions.len() as i32;

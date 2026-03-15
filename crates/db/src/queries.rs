@@ -3,8 +3,8 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::models::{
-    ArchiveRow, Challenge, ChallengeHistory, Difficulty, LeaderboardRow, Submission, User,
-    UserStats,
+    Difficulty, LeaderboardRow, PasswordResetToken, RefreshToken, TriviaArchiveRow,
+    TriviaChallenge, TriviaChallengeHistory, TriviaStats, TriviaSubmission, User,
 };
 
 // ── Users ───────────────────────────────────────────────────────────────────
@@ -115,21 +115,40 @@ pub async fn update_email(pool: &PgPool, user_id: Uuid, email: &str) -> AppResul
     Ok(user)
 }
 
-// ── Challenges ──────────────────────────────────────────────────────────────
+// ── Games registry ──────────────────────────────────────────────────────────────
 
 #[tracing::instrument(skip(pool))]
-pub async fn find_challenge_by_date(
+pub async fn find_active_games(pool: &PgPool) -> AppResult<Vec<crate::models::Game>> {
+    let results = sqlx::query_as!(
+        crate::models::Game,
+        r#"
+        SELECT id, name, description, icon, is_active, sort_order, created_at
+        FROM games
+        WHERE is_active = true
+        ORDER BY sort_order ASC
+        "#,
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(AppError::from)?;
+
+    tracing::debug!(count = results.len(), "fetched active games");
+    Ok(results)
+}
+
+#[tracing::instrument(skip(pool))]
+pub async fn find_trivia_challenge_by_date(
     pool: &PgPool,
     scheduled_date: chrono::NaiveDate,
-) -> AppResult<Option<Challenge>> {
+) -> AppResult<Option<TriviaChallenge>> {
     let result = sqlx::query_as!(
-        Challenge,
+        TriviaChallenge,
         r#"
         SELECT id, title, description,
                difficulty as "difficulty: Difficulty",
                expected_answer, hint, max_attempts,
                scheduled_date, created_at
-        FROM challenges
+        FROM trivia_challenges
         WHERE scheduled_date = $1
         "#,
         scheduled_date,
@@ -141,21 +160,24 @@ pub async fn find_challenge_by_date(
     tracing::debug!(
         found = result.is_some(),
         %scheduled_date,
-        "challenge lookup by date"
+        "trivia challenge lookup by date"
     );
     Ok(result)
 }
 
 #[tracing::instrument(skip(pool))]
-pub async fn find_challenge_by_id(pool: &PgPool, id: Uuid) -> AppResult<Option<Challenge>> {
+pub async fn find_trivia_challenge_by_id(
+    pool: &PgPool,
+    id: Uuid,
+) -> AppResult<Option<TriviaChallenge>> {
     let result = sqlx::query_as!(
-        Challenge,
+        TriviaChallenge,
         r#"
         SELECT id, title, description,
                difficulty as "difficulty: Difficulty",
                expected_answer, hint, max_attempts,
                scheduled_date, created_at
-        FROM challenges
+        FROM trivia_challenges
         WHERE id = $1
         "#,
         id
@@ -164,24 +186,24 @@ pub async fn find_challenge_by_id(pool: &PgPool, id: Uuid) -> AppResult<Option<C
     .await
     .map_err(AppError::from)?;
 
-    tracing::debug!(found = result.is_some(), "challenge lookup by id");
+    tracing::debug!(found = result.is_some(), "trivia challenge lookup by id");
     Ok(result)
 }
 
 // ── Submissions ─────────────────────────────────────────────────────────────
 
 #[tracing::instrument(skip(pool))]
-pub async fn find_submissions_by_user_and_challenge(
+pub async fn find_trivia_submissions_by_user_and_challenge(
     pool: &PgPool,
     user_id: Uuid,
     challenge_id: Uuid,
-) -> AppResult<Vec<Submission>> {
+) -> AppResult<Vec<TriviaSubmission>> {
     let results = sqlx::query_as!(
-        Submission,
+        TriviaSubmission,
         r#"
         SELECT id, user_id, challenge_id, answer,
                is_correct, attempt_number, submitted_at
-        FROM submissions
+        FROM trivia_submissions
         WHERE user_id = $1 AND challenge_id = $2
         "#,
         user_id,
@@ -191,23 +213,23 @@ pub async fn find_submissions_by_user_and_challenge(
     .await
     .map_err(AppError::from)?;
 
-    tracing::debug!(count = results.len(), "fetched submissions");
+    tracing::debug!(count = results.len(), "fetched trivia submissions");
     Ok(results)
 }
 
 #[tracing::instrument(skip(pool, answer))]
-pub async fn create_submission(
+pub async fn create_trivia_submission(
     pool: &PgPool,
     user_id: Uuid,
     challenge_id: Uuid,
     answer: &str,
     is_correct: bool,
     attempt_number: i32,
-) -> AppResult<Submission> {
+) -> AppResult<TriviaSubmission> {
     let submission = sqlx::query_as!(
-        Submission,
+        TriviaSubmission,
         r#"
-        INSERT INTO submissions (user_id, challenge_id, answer,
+        INSERT INTO trivia_submissions (user_id, challenge_id, answer,
                                  is_correct, attempt_number)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id, user_id, challenge_id, answer, is_correct,
@@ -229,7 +251,7 @@ pub async fn create_submission(
         %challenge_id,
         is_correct,
         attempt_number,
-        "submission recorded"
+        "trivia submission recorded"
     );
     Ok(submission)
 }
@@ -237,13 +259,13 @@ pub async fn create_submission(
 // ── User history ────────────────────────────────────────────────────────────
 
 #[tracing::instrument(skip(pool))]
-pub async fn find_user_challenge_history(
+pub async fn find_trivia_challenge_history(
     pool: &PgPool,
     user_id: Uuid,
     limit: i64,
-) -> AppResult<Vec<ChallengeHistory>> {
+) -> AppResult<Vec<TriviaChallengeHistory>> {
     let results = sqlx::query_as!(
-        ChallengeHistory,
+        TriviaChallengeHistory,
         r#"
         SELECT * FROM (
             SELECT DISTINCT ON (s.challenge_id)
@@ -251,8 +273,8 @@ pub async fn find_user_challenge_history(
                    c.difficulty as "difficulty: Difficulty",
                    c.scheduled_date, s.is_correct,
                    s.attempt_number, s.submitted_at
-            FROM submissions s
-            JOIN challenges c ON c.id = s.challenge_id
+            FROM trivia_submissions s
+            JOIN trivia_challenges c ON c.id = s.challenge_id
             WHERE s.user_id = $1
             ORDER BY s.challenge_id, s.is_correct DESC, s.attempt_number DESC
         ) history
@@ -266,39 +288,39 @@ pub async fn find_user_challenge_history(
     .await
     .map_err(AppError::from)?;
 
-    tracing::debug!(count = results.len(), "fetched challenge history");
+    tracing::debug!(count = results.len(), "fetched trivia challenge history");
     Ok(results)
 }
 
 // ── User stats ──────────────────────────────────────────────────────────────
 
 #[tracing::instrument(skip(pool))]
-pub async fn upsert_user_stats_on_solve(
+pub async fn upsert_trivia_stats_on_solve(
     pool: &PgPool,
     user_id: Uuid,
     solved_date: chrono::NaiveDate,
 ) -> AppResult<()> {
     sqlx::query!(
         r#"
-        INSERT INTO user_stats (user_id, current_streak, longest_streak, total_solved, last_solved_date)
+        INSERT INTO trivia_stats (user_id, current_streak, longest_streak, total_solved, last_solved_date)
         VALUES ($1, 1, 1, 1, $2)
         ON CONFLICT (user_id) DO UPDATE SET
             current_streak = CASE
-                WHEN user_stats.last_solved_date = $2 THEN user_stats.current_streak
-                WHEN user_stats.last_solved_date = $2 - 1 THEN user_stats.current_streak + 1
+                WHEN trivia_stats.last_solved_date = $2 THEN trivia_stats.current_streak
+                WHEN trivia_stats.last_solved_date = $2 - 1 THEN trivia_stats.current_streak + 1
                 ELSE 1
             END,
             longest_streak = GREATEST(
-                user_stats.longest_streak,
+                trivia_stats.longest_streak,
                 CASE
-                    WHEN user_stats.last_solved_date = $2 THEN user_stats.current_streak
-                    WHEN user_stats.last_solved_date = $2 - 1 THEN user_stats.current_streak + 1
+                    WHEN trivia_stats.last_solved_date = $2 THEN trivia_stats.current_streak
+                    WHEN trivia_stats.last_solved_date = $2 - 1 THEN trivia_stats.current_streak + 1
                     ELSE 1
                 END
             ),
             total_solved = CASE
-                WHEN user_stats.last_solved_date = $2 THEN user_stats.total_solved
-                ELSE user_stats.total_solved + 1
+                WHEN trivia_stats.last_solved_date = $2 THEN trivia_stats.total_solved
+                ELSE trivia_stats.total_solved + 1
             END,
             last_solved_date = $2
         "#,
@@ -309,18 +331,18 @@ pub async fn upsert_user_stats_on_solve(
     .await
     .map_err(AppError::from)?;
 
-    tracing::info!(%user_id, %solved_date, "user stats updated on solve");
+    tracing::info!(%user_id, %solved_date, "trivia stats updated on solve");
     Ok(())
 }
 
 #[tracing::instrument(skip(pool))]
-pub async fn increment_total_attempts(pool: &PgPool, user_id: Uuid) -> AppResult<()> {
+pub async fn increment_trivia_attempts(pool: &PgPool, user_id: Uuid) -> AppResult<()> {
     sqlx::query!(
         r#"
-        INSERT INTO user_stats (user_id, total_attempts)
+        INSERT INTO trivia_stats (user_id, total_attempts)
         VALUES ($1, 1)
         ON CONFLICT (user_id) DO UPDATE SET
-            total_attempts = user_stats.total_attempts + 1
+            total_attempts = trivia_stats.total_attempts + 1
         "#,
         user_id,
     )
@@ -328,18 +350,18 @@ pub async fn increment_total_attempts(pool: &PgPool, user_id: Uuid) -> AppResult
     .await
     .map_err(AppError::from)?;
 
-    tracing::debug!(%user_id, "total attempts incremented");
+    tracing::debug!(%user_id, "trivia total attempts incremented");
     Ok(())
 }
 
 #[tracing::instrument(skip(pool))]
-pub async fn find_user_stats(pool: &PgPool, user_id: Uuid) -> AppResult<Option<UserStats>> {
+pub async fn find_trivia_stats(pool: &PgPool, user_id: Uuid) -> AppResult<Option<TriviaStats>> {
     let result = sqlx::query_as!(
-        UserStats,
+        TriviaStats,
         r#"
         SELECT user_id, current_streak, longest_streak,
                total_solved, total_attempts, last_solved_date
-        FROM user_stats
+        FROM trivia_stats
         WHERE user_id = $1
         "#,
         user_id
@@ -348,19 +370,19 @@ pub async fn find_user_stats(pool: &PgPool, user_id: Uuid) -> AppResult<Option<U
     .await
     .map_err(AppError::from)?;
 
-    tracing::debug!(found = result.is_some(), "user stats lookup");
+    tracing::debug!(found = result.is_some(), "trivia stats lookup");
     Ok(result)
 }
 
 // ── Leaderboard ─────────────────────────────────────────────────────────────
 
 #[tracing::instrument(skip(pool))]
-pub async fn find_leaderboard(pool: &PgPool, limit: i64) -> AppResult<Vec<LeaderboardRow>> {
+pub async fn find_trivia_leaderboard(pool: &PgPool, limit: i64) -> AppResult<Vec<LeaderboardRow>> {
     let results = sqlx::query_as!(
         LeaderboardRow,
         r#"
         SELECT u.username, s.current_streak, s.longest_streak, s.total_solved
-        FROM user_stats s
+        FROM trivia_stats s
         JOIN users u ON u.id = s.user_id
         ORDER BY s.current_streak DESC, s.total_solved DESC
         LIMIT $1
@@ -371,28 +393,28 @@ pub async fn find_leaderboard(pool: &PgPool, limit: i64) -> AppResult<Vec<Leader
     .await
     .map_err(AppError::from)?;
 
-    tracing::debug!(count = results.len(), "fetched leaderboard");
+    tracing::debug!(count = results.len(), "fetched trivia leaderboard");
     Ok(results)
 }
 
 // ── Archive ─────────────────────────────────────────────────────────────────
 
 #[tracing::instrument(skip(pool))]
-pub async fn find_past_challenges_with_status(
+pub async fn find_trivia_past_challenges(
     pool: &PgPool,
     user_id: Uuid,
     today: chrono::NaiveDate,
-) -> AppResult<Vec<ArchiveRow>> {
+) -> AppResult<Vec<TriviaArchiveRow>> {
     let results = sqlx::query_as!(
-        ArchiveRow,
+        TriviaArchiveRow,
         r#"
         SELECT c.id, c.title,
                c.difficulty as "difficulty: Difficulty",
                c.scheduled_date, c.max_attempts,
                COALESCE(bool_or(s.is_correct), false) as "is_solved!",
                COUNT(s.id) as "attempts_used!"
-        FROM challenges c
-        LEFT JOIN submissions s ON s.challenge_id = c.id AND s.user_id = $1
+        FROM trivia_challenges c
+        LEFT JOIN trivia_submissions s ON s.challenge_id = c.id AND s.user_id = $1
         WHERE c.scheduled_date < $2
         GROUP BY c.id
         ORDER BY c.scheduled_date DESC
@@ -404,7 +426,7 @@ pub async fn find_past_challenges_with_status(
     .await
     .map_err(AppError::from)?;
 
-    tracing::debug!(count = results.len(), "fetched past challenges");
+    tracing::debug!(count = results.len(), "fetched trivia past challenges");
     Ok(results)
 }
 
@@ -438,9 +460,9 @@ pub async fn create_refresh_token(
 pub async fn find_refresh_token_by_hash(
     pool: &PgPool,
     token_hash: &str,
-) -> AppResult<Option<crate::models::RefreshToken>> {
+) -> AppResult<Option<RefreshToken>> {
     let result = sqlx::query_as!(
-        crate::models::RefreshToken,
+        RefreshToken,
         r#"
         SELECT id, user_id, token_hash, expires_at, created_at, revoked_at
         FROM refresh_tokens
@@ -535,9 +557,9 @@ pub async fn create_password_reset_token(
 pub async fn find_password_reset_token_by_hash(
     pool: &PgPool,
     token_hash: &str,
-) -> AppResult<Option<crate::models::PasswordResetToken>> {
+) -> AppResult<Option<PasswordResetToken>> {
     let result = sqlx::query_as!(
-        crate::models::PasswordResetToken,
+        PasswordResetToken,
         r#"
         SELECT id, user_id, token_hash, expires_at, created_at, used_at
         FROM password_reset_tokens

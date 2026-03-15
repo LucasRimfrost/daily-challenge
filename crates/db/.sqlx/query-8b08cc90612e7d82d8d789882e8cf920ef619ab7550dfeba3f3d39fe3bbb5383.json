@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT user_id, current_streak, longest_streak,\n               total_solved, total_attempts, last_solved_date\n        FROM user_stats\n        WHERE user_id = $1\n        ",
+  "query": "\n        SELECT user_id, current_streak, longest_streak,\n               total_solved, total_attempts, last_solved_date\n        FROM trivia_stats\n        WHERE user_id = $1\n        ",
   "describe": {
     "columns": [
       {
@@ -48,5 +48,5 @@
       true
     ]
   },
-  "hash": "4e8b057f68effd551819cdb6394177194e68a705db4e9a26275d901a1947d0eb"
+  "hash": "8b08cc90612e7d82d8d789882e8cf920ef619ab7550dfeba3f3d39fe3bbb5383"
 }

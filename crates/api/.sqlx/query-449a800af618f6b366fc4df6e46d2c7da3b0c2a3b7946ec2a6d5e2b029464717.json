@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT c.id, c.title,\n               c.difficulty as \"difficulty: Difficulty\",\n               c.scheduled_date, c.max_attempts,\n               COALESCE(bool_or(s.is_correct), false) as \"is_solved!\",\n               COUNT(s.id) as \"attempts_used!\"\n        FROM challenges c\n        LEFT JOIN submissions s ON s.challenge_id = c.id AND s.user_id = $1\n        WHERE c.scheduled_date < $2\n        GROUP BY c.id\n        ORDER BY c.scheduled_date DESC\n        ",
+  "query": "\n        SELECT c.id, c.title,\n               c.difficulty as \"difficulty: Difficulty\",\n               c.scheduled_date, c.max_attempts,\n               COALESCE(bool_or(s.is_correct), false) as \"is_solved!\",\n               COUNT(s.id) as \"attempts_used!\"\n        FROM trivia_challenges c\n        LEFT JOIN trivia_submissions s ON s.challenge_id = c.id AND s.user_id = $1\n        WHERE c.scheduled_date < $2\n        GROUP BY c.id\n        ORDER BY c.scheduled_date DESC\n        ",
   "describe": {
     "columns": [
       {
@@ -55,5 +55,5 @@
       null
     ]
   },
-  "hash": "10ce7b2e50d56510963d5746f14c1d33cc703b4d3d5f650afb9c460e25d6c1cd"
+  "hash": "449a800af618f6b366fc4df6e46d2c7da3b0c2a3b7946ec2a6d5e2b029464717"
 }

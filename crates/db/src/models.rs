@@ -21,8 +21,23 @@ pub enum Difficulty {
     Hard,
 }
 
+// ── Games registry ──────────────────────────────────────────────────────────
+
 #[derive(Debug, FromRow, Serialize)]
-pub struct Challenge {
+pub struct Game {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub icon: Option<String>,
+    pub is_active: bool,
+    pub sort_order: i32,
+    pub created_at: DateTime<Utc>,
+}
+
+// ── Trivia game ─────────────────────────────────────────────────────────────
+
+#[derive(Debug, FromRow, Serialize)]
+pub struct TriviaChallenge {
     pub id: Uuid,
     pub title: String,
     pub description: String,
@@ -31,22 +46,11 @@ pub struct Challenge {
     pub hint: Option<String>,
     pub max_attempts: i32,
     pub scheduled_date: chrono::NaiveDate,
-    pub created_at: chrono::DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, FromRow, Serialize)]
-pub struct ChallengeHistory {
-    pub challenge_id: Uuid,
-    pub title: String,
-    pub difficulty: Difficulty,
-    pub scheduled_date: chrono::NaiveDate,
-    pub is_correct: bool,
-    pub attempt_number: i32,
-    pub submitted_at: DateTime<Utc>,
-}
-
-#[derive(Debug, FromRow, Serialize)]
-pub struct Submission {
+pub struct TriviaSubmission {
     pub id: Uuid,
     pub user_id: Uuid,
     pub challenge_id: Uuid,
@@ -57,7 +61,7 @@ pub struct Submission {
 }
 
 #[derive(Debug, FromRow, Serialize)]
-pub struct UserStats {
+pub struct TriviaStats {
     pub user_id: Uuid,
     pub current_streak: i32,
     pub longest_streak: i32,
@@ -67,15 +71,18 @@ pub struct UserStats {
 }
 
 #[derive(Debug, FromRow, Serialize)]
-pub struct LeaderboardRow {
-    pub username: String,
-    pub current_streak: i32,
-    pub longest_streak: i32,
-    pub total_solved: i32,
+pub struct TriviaChallengeHistory {
+    pub challenge_id: Uuid,
+    pub title: String,
+    pub difficulty: Difficulty,
+    pub scheduled_date: chrono::NaiveDate,
+    pub is_correct: bool,
+    pub attempt_number: i32,
+    pub submitted_at: DateTime<Utc>,
 }
 
 #[derive(Debug, FromRow)]
-pub struct ArchiveRow {
+pub struct TriviaArchiveRow {
     pub id: Uuid,
     pub title: String,
     pub difficulty: Difficulty,
@@ -83,6 +90,14 @@ pub struct ArchiveRow {
     pub max_attempts: i32,
     pub is_solved: bool,
     pub attempts_used: i64,
+}
+
+#[derive(Debug, FromRow, Serialize)]
+pub struct LeaderboardRow {
+    pub username: String,
+    pub current_streak: i32,
+    pub longest_streak: i32,
+    pub total_solved: i32,
 }
 
 #[derive(Debug, FromRow)]

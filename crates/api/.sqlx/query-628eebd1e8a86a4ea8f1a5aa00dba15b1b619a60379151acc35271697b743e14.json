@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        INSERT INTO submissions (user_id, challenge_id, answer,\n                                 is_correct, attempt_number)\n        VALUES ($1, $2, $3, $4, $5)\n        RETURNING id, user_id, challenge_id, answer, is_correct,\n                  attempt_number, submitted_at\n        ",
+  "query": "\n        INSERT INTO trivia_submissions (user_id, challenge_id, answer,\n                                 is_correct, attempt_number)\n        VALUES ($1, $2, $3, $4, $5)\n        RETURNING id, user_id, challenge_id, answer, is_correct,\n                  attempt_number, submitted_at\n        ",
   "describe": {
     "columns": [
       {
@@ -58,5 +58,5 @@
       false
     ]
   },
-  "hash": "94562580792cf7f0541ce06903cc68c45d14f9524f5a799a09cc7b876b10d942"
+  "hash": "628eebd1e8a86a4ea8f1a5aa00dba15b1b619a60379151acc35271697b743e14"
 }

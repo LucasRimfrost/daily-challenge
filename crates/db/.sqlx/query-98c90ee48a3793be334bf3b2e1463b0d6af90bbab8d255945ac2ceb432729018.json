@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT id, user_id, challenge_id, answer,\n               is_correct, attempt_number, submitted_at\n        FROM submissions\n        WHERE user_id = $1 AND challenge_id = $2\n        ",
+  "query": "\n        SELECT id, user_id, challenge_id, answer,\n               is_correct, attempt_number, submitted_at\n        FROM trivia_submissions\n        WHERE user_id = $1 AND challenge_id = $2\n        ",
   "describe": {
     "columns": [
       {
@@ -55,5 +55,5 @@
       false
     ]
   },
-  "hash": "384e6077e96c0e01b255e3821302c4c7eb3f9cc7524e33e151210056f52a9027"
+  "hash": "98c90ee48a3793be334bf3b2e1463b0d6af90bbab8d255945ac2ceb432729018"
 }
