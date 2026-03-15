@@ -52,7 +52,11 @@ pub fn router(state: AppState) -> Router {
 
     let cors = CorsLayer::new()
         .allow_origin(AllowOrigin::exact(allowed_origin))
-        .allow_methods([axum::http::Method::GET, axum::http::Method::POST, axum::http::Method::PATCH])
+        .allow_methods([
+            axum::http::Method::GET,
+            axum::http::Method::POST,
+            axum::http::Method::PATCH,
+        ])
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
         .allow_credentials(true);
 
