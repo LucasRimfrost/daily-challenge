@@ -8,6 +8,7 @@ import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { ChallengePage } from "@/pages/ChallengePage";
 import { ArchivePage } from "@/pages/ArchivePage";
 import { HistoryPage } from "@/pages/HistoryPage";
+import { HubPage } from "@/pages/HubPage";
 import { LeaderboardPage } from "@/pages/LeaderboardPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,7 +18,7 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-background">
         <div className="mx-auto mb-3 size-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
       </div>
     );
@@ -36,10 +37,11 @@ function App() {
 
           {/* Protected */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<ChallengePage />} />
-            <Route path="/challenge/:date" element={<ChallengePage />} />
-            <Route path="/archive" element={<ArchivePage />} />
-            <Route path="/history" element={<HistoryPage />} />
+            <Route path="/" element={<HubPage />} />
+            <Route path="/trivia" element={<ChallengePage />} />
+            <Route path="/trivia/:date" element={<ChallengePage />} />
+            <Route path="/trivia/archive" element={<ArchivePage />} />
+            <Route path="/trivia/history" element={<HistoryPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
 

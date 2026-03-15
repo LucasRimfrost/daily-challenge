@@ -102,6 +102,17 @@ export interface HistoryEntry {
   submitted_at: string;
 }
 
+// ---- Games ----
+
+export interface Game {
+  id: string;
+  name: string;
+  description: string;
+  icon: string | null;
+  is_active: boolean;
+  sort_order: number;
+}
+
 // ---- Leaderboard ----
 
 export interface LeaderboardEntry {

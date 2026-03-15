@@ -39,6 +39,7 @@ pub fn router(state: AppState) -> Router {
     let routes = Router::new()
         .merge(handlers::health::router())
         .nest("/auth", auth_routes)
+        .nest("/games", handlers::games::router())
         .nest("/trivia", trivia_routes)
         .nest("/leaderboard", handlers::leaderboard::router());
 

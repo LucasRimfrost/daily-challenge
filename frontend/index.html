@@ -16,6 +16,28 @@
         }
       })();
     </script>
+    <style>
+      /* Inline critical colors so background is correct before Tailwind loads */
+      html { background-color: #ffffff; }
+      html.dark { background-color: #09090b; }
+      /* Show a spinner while React hasn't mounted yet */
+      #root:empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+      #root:empty::after {
+        content: '';
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        border: 2px solid rgba(128, 128, 128, 0.2);
+        border-top-color: rgba(128, 128, 128, 0.6);
+        animation: _sp 0.8s linear infinite;
+      }
+      @keyframes _sp { to { transform: rotate(360deg); } }
+    </style>
   </head>
   <body>
     <div id="root"></div>

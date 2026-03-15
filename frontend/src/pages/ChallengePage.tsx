@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { getChallengeByDate, getToday, submitAnswer } from "@/api/challenge";
+import { getChallengeByDate, getToday, submitAnswer } from "@/api/trivia";
 import { toast } from "sonner";
 import { ApiRequestError } from "@/api/client";
 import type { Challenge, SubmitResponse } from "@/api/types";

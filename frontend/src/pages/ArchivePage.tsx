@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getArchive } from "@/api/challenge";
+import { getArchive } from "@/api/trivia";
 import { ApiRequestError } from "@/api/client";
 import type { ArchiveEntry } from "@/api/types";
 import { cn } from "@/lib/utils";
@@ -162,7 +162,7 @@ export function ArchivePage() {
           return (
             <Link
               key={entry.id}
-              to={`/challenge/${entry.scheduled_date}`}
+              to={`/trivia/${entry.scheduled_date}`}
               className="group"
             >
               <Card

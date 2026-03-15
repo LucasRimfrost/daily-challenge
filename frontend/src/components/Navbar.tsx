@@ -60,11 +60,11 @@ export function Navbar() {
             </NavLink>
             {user && (
               <>
-                <NavLink to="/archive">
+                <NavLink to="/trivia/archive">
                   <Archive className="size-4" />
                   <span className="hidden sm:inline">Archive</span>
                 </NavLink>
-                <NavLink to="/history">
+                <NavLink to="/trivia/history">
                   <History className="size-4" />
                   <span className="hidden sm:inline">History</span>
                 </NavLink>

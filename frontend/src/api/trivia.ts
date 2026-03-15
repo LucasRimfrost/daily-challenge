@@ -7,7 +7,7 @@ import type {
   SubmitResponse,
 } from "./types";
 
-const BASE = "/api/v1/challenge";
+const BASE = "/api/v1/trivia";
 
 export function getToday(): Promise<Challenge> {
   return api<Challenge>(`${BASE}/today`);

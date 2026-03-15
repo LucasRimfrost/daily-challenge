@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getHistory } from "@/api/challenge";
+import { getHistory } from "@/api/trivia";
 import { ApiRequestError } from "@/api/client";
 import type { HistoryEntry } from "@/api/types";
 import { cn } from "@/lib/utils";
