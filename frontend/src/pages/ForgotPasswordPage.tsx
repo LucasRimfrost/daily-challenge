@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { KeyRound } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -39,7 +38,6 @@ export function ForgotPasswordPage() {
     } finally {
       setSubmitting(false);
       setSubmitted(true);
-      toast.success("If an account with that email exists, a password reset link has been sent.");
     }
   }
 

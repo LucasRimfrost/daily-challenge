@@ -32,8 +32,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { difficultyConfig, getLanguageLabel } from "@/lib/game";
 import {
+  Check,
   CheckCircle,
   ClipboardCheck,
+  Copy,
   Flame,
   Lightbulb,
   Send,
@@ -73,6 +75,7 @@ export function CodeOutputPage() {
   const [hint, setHint] = useState<string | null>(null);
   const [answerError, setAnswerError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
   const [hintVisible, setHintVisible] = useState(false);
   const [guesses, setGuesses] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -261,13 +264,28 @@ export function CodeOutputPage() {
 
           {/* Code snippet */}
           <div className="code-block overflow-hidden rounded-2xl">
-            <div className="code-block-header flex items-center px-4 py-2">
+            <div className="code-block-header flex items-center justify-between px-4 py-2">
               <Badge
                 variant="outline"
                 className="border-neutral-600 bg-neutral-700 text-xs text-neutral-300"
               >
                 {getLanguageLabel(challenge.language)}
               </Badge>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(challenge.code_snippet);
+                  setCodeCopied(true);
+                  setTimeout(() => setCodeCopied(false), 2000);
+                }}
+                title="Copy code"
+                className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-700 hover:text-neutral-300"
+              >
+                {codeCopied ? (
+                  <Check className="size-4 text-green-400" />
+                ) : (
+                  <Copy className="size-4" />
+                )}
+              </button>
             </div>
             <div className="overflow-x-auto p-4">
               <pre className="text-sm leading-loose">

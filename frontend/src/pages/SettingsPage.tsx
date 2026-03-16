@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,6 +19,7 @@ function UsernameSection() {
   const { user, refresh } = useAuth();
   const [username, setUsername] = useState(user?.username ?? "");
   const [submitting, setSubmitting] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function validate(): boolean {
@@ -37,7 +39,8 @@ function UsernameSection() {
     try {
       await updateProfile({ username });
       await refresh();
-      toast.success("Username updated");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       toast.error(
         err instanceof ApiRequestError ? err.message : "Something went wrong",
@@ -66,8 +69,8 @@ function UsernameSection() {
           <p className="text-sm text-muted-foreground">3–30 characters</p>
         )}
       </div>
-      <Button type="submit" disabled={submitting} className="w-fit">
-        {submitting ? "Saving..." : "Save username"}
+      <Button type="submit" disabled={submitting || saved} className="w-fit">
+        {submitting ? "Saving..." : saved ? <><Check className="mr-1.5 size-3.5" />Saved</> : "Save username"}
       </Button>
     </form>
   );
@@ -78,6 +81,7 @@ function EmailSection() {
   const [newEmail, setNewEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function validate(): boolean {
@@ -105,7 +109,8 @@ function EmailSection() {
       await updateEmail({ new_email: newEmail, current_password: password });
       await refresh();
       setPassword("");
-      toast.success("Email updated");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       toast.error(
         err instanceof ApiRequestError ? err.message : "Something went wrong",
@@ -150,8 +155,8 @@ function EmailSection() {
           <p className="text-sm text-destructive">{errors.password}</p>
         )}
       </div>
-      <Button type="submit" disabled={submitting} className="w-fit">
-        {submitting ? "Saving..." : "Save email"}
+      <Button type="submit" disabled={submitting || saved} className="w-fit">
+        {submitting ? "Saving..." : saved ? <><Check className="mr-1.5 size-3.5" />Saved</> : "Save email"}
       </Button>
     </form>
   );
@@ -162,6 +167,7 @@ function PasswordSection() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function validate(): boolean {
@@ -196,7 +202,8 @@ function PasswordSection() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      toast.success("Password updated");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       toast.error(
         err instanceof ApiRequestError ? err.message : "Something went wrong",
@@ -261,8 +268,8 @@ function PasswordSection() {
           <p className="text-sm text-destructive">{errors.confirmPassword}</p>
         )}
       </div>
-      <Button type="submit" disabled={submitting} className="w-fit">
-        {submitting ? "Saving..." : "Change password"}
+      <Button type="submit" disabled={submitting || saved} className="w-fit">
+        {submitting ? "Saving..." : saved ? <><Check className="mr-1.5 size-3.5" />Saved</> : "Change password"}
       </Button>
     </form>
   );

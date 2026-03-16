@@ -155,12 +155,7 @@ export function HubPage() {
               to={`/${game.id.replace(/_/g, "-")}`}
               className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
-              <Card className={`relative border-l-[3px] transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 group-hover:border-primary/30 group-hover:scale-[1.02] group-active:scale-[0.99] ${gameAccentBorder[game.id] ?? ""}`}>
-                {isCompleted && (
-                  <div className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full bg-green-500">
-                    <Check className="size-3 text-white" strokeWidth={3} />
-                  </div>
-                )}
+              <Card className={`border-l-[3px] transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 group-hover:border-primary/30 group-hover:scale-[1.02] group-active:scale-[0.99] ${gameAccentBorder[game.id] ?? ""}`}>
                 <CardContent className="flex items-center gap-5 p-6">
                   <div
                     className={`flex size-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${iconColor}`}
@@ -172,6 +167,12 @@ export function HubPage() {
                     <p className="mt-1 text-sm text-muted-foreground">
                       {game.description}
                     </p>
+                    {isCompleted && (
+                      <p className="mt-1.5 flex items-center gap-1 text-xs text-green-600 dark:text-green-500">
+                        <Check className="size-3" strokeWidth={3} />
+                        Completed today
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-3">
                     {user &&

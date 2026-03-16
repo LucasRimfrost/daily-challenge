@@ -74,7 +74,6 @@ export function ResetPasswordPage() {
     try {
       await resetPassword({ token: token!, new_password: password });
       setSuccess(true);
-      toast.success("Password has been reset. Redirecting to login...");
       setTimeout(() => navigate("/login", { replace: true }), 3000);
     } catch (err) {
       if (err instanceof ApiRequestError) {
