@@ -2,7 +2,7 @@ use axum::{
     Json, Router,
     extract::State,
     http::{StatusCode, header},
-    response::IntoResponse,
+    response::{AppendHeaders, IntoResponse},
     routing::{get, post},
 };
 use axum_extra::extract::CookieJar;
@@ -154,17 +154,14 @@ pub async fn register(
 
     tracing::info!(user_id = %user.id, email = %user.email, "user registered");
 
-    let token = auth::jwt::create_access_token(
-        &user.id.to_string(),
-        &state.config.jwt_secret,
-        state.config.jwt_access_token_expiry_minutes,
-    )?;
-
-    let cookie = build_access_cookie(token, state.config.jwt_access_token_expiry_minutes);
+    let (access_cookie, refresh_cookie) = issue_tokens(&state, user.id).await?;
 
     Ok((
         StatusCode::CREATED,
-        [(header::SET_COOKIE, cookie.to_string())],
+        AppendHeaders([
+            (header::SET_COOKIE, access_cookie.to_string()),
+            (header::SET_COOKIE, refresh_cookie.to_string()),
+        ]),
         Json(AuthResponse {
             id: user.id.to_string(),
             username: user.username,
@@ -205,19 +202,16 @@ pub async fn login(
         return Err(AppError::InvalidCredentials);
     }
 
-    let token = auth::jwt::create_access_token(
-        &user.id.to_string(),
-        &state.config.jwt_secret,
-        state.config.jwt_access_token_expiry_minutes,
-    )?;
-
-    let cookie = build_access_cookie(token, state.config.jwt_access_token_expiry_minutes);
+    let (access_cookie, refresh_cookie) = issue_tokens(&state, user.id).await?;
 
     tracing::info!(user_id = %user.id, "login successful");
 
     Ok((
         StatusCode::OK,
-        [(header::SET_COOKIE, cookie.to_string())],
+        AppendHeaders([
+            (header::SET_COOKIE, access_cookie.to_string()),
+            (header::SET_COOKIE, refresh_cookie.to_string()),
+        ]),
         Json(AuthResponse {
             id: user.id.to_string(),
             username: user.username,
@@ -280,10 +274,10 @@ pub async fn refresh(
 
     Ok((
         StatusCode::OK,
-        [
+        AppendHeaders([
             (header::SET_COOKIE, access_cookie.to_string()),
             (header::SET_COOKIE, refresh_cookie.to_string()),
-        ],
+        ]),
     ))
 }
 
@@ -446,14 +440,29 @@ pub async fn me(
 }
 
 /// POST /api/v1/auth/logout
-pub async fn logout() -> impl IntoResponse {
+pub async fn logout(State(state): State<AppState>, jar: CookieJar) -> AppResult<impl IntoResponse> {
+    // Revoke the refresh token in the database if present.
+    if let Some(refresh_cookie) = jar.get("refresh_token") {
+        let token_hash = auth::token::hash_refresh_token(refresh_cookie.value());
+        if let Some(stored) = find_refresh_token_by_hash(&state.pool, &token_hash).await?
+            && stored.revoked_at.is_none()
+        {
+            revoke_refresh_token(&state.pool, stored.id).await?;
+        }
+    }
+
     tracing::info!("user logged out");
 
-    let cookie = build_logout_cookie();
-    (
+    let access_cookie = build_logout_cookie("access_token", "/");
+    let refresh_cookie = build_logout_cookie("refresh_token", "/api/v1/auth");
+
+    Ok((
         StatusCode::NO_CONTENT,
-        [(header::SET_COOKIE, cookie.to_string())],
-    )
+        AppendHeaders([
+            (header::SET_COOKIE, access_cookie.to_string()),
+            (header::SET_COOKIE, refresh_cookie.to_string()),
+        ]),
+    ))
 }
 
 /// PATCH /api/v1/auth/profile
@@ -641,11 +650,11 @@ fn build_refresh_cookie(
         .build()
 }
 
-fn build_logout_cookie() -> axum_extra::extract::cookie::Cookie<'static> {
+fn build_logout_cookie(name: &str, path: &str) -> axum_extra::extract::cookie::Cookie<'static> {
     use axum_extra::extract::cookie::{Cookie, SameSite};
 
-    Cookie::build(("access_token", ""))
-        .path("/")
+    Cookie::build((name.to_owned(), String::new()))
+        .path(path.to_owned())
         .http_only(true)
         .same_site(SameSite::Strict)
         .secure(!cfg!(debug_assertions))
