@@ -29,7 +29,7 @@ pub async fn leaderboard(
     State(state): State<AppState>,
     Query(params): Query<LeaderboardParams>,
 ) -> AppResult<impl IntoResponse> {
-    let limit = params.limit.unwrap_or(30);
+    let limit = params.limit.unwrap_or(30).clamp(1, 100);
     let game = params.game.as_deref().unwrap_or("trivia");
 
     tracing::debug!(limit, game, "fetching leaderboard");

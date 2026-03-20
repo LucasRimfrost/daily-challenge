@@ -212,7 +212,7 @@ pub async fn history(
     auth_user: AuthUser,
     Query(params): Query<HistoryParams>,
 ) -> AppResult<impl IntoResponse> {
-    let limit = params.limit.unwrap_or(30);
+    let limit = params.limit.unwrap_or(30).clamp(1, 100);
 
     tracing::debug!(user_id = %auth_user.id, limit, "fetching trivia history");
 
