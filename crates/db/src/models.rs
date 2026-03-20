@@ -30,6 +30,15 @@ impl fmt::Debug for User {
     }
 }
 
+/// A user's public profile fields (no password_hash).
+#[derive(Debug, FromRow, Serialize)]
+pub struct UserProfile {
+    pub id: Uuid,
+    pub username: String,
+    pub email: String,
+    pub created_at: DateTime<Utc>,
+}
+
 /// Challenge difficulty level, stored as lowercase text in PostgreSQL.
 #[derive(Debug, sqlx::Type, Serialize, Deserialize)]
 #[sqlx(type_name = "text", rename_all = "lowercase")]

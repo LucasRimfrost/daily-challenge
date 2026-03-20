@@ -393,7 +393,7 @@ pub async fn me(
 ) -> AppResult<impl IntoResponse> {
     let user_id = auth_user.id;
 
-    let user = db::queries::find_user_by_id(&state.pool, user_id)
+    let user = db::queries::find_user_profile_by_id(&state.pool, user_id)
         .await?
         .ok_or_else(|| {
             tracing::warn!(user_id = %user_id, "authenticated user not found in database");

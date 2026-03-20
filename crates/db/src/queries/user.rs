@@ -2,7 +2,7 @@ use shared::error::{AppError, AppResult};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::models::User;
+use crate::models::{User, UserProfile};
 
 // ── Users ───────────────────────────────────────────────────────────────────
 
@@ -74,6 +74,26 @@ pub async fn find_user_by_id(pool: &PgPool, id: Uuid) -> AppResult<Option<User>>
     .map_err(AppError::from)?;
 
     tracing::debug!(found = result.is_some(), "user lookup by id");
+    Ok(result)
+}
+
+/// Looks up a user's profile (without password_hash) by primary key.
+#[tracing::instrument(skip(pool))]
+pub async fn find_user_profile_by_id(pool: &PgPool, id: Uuid) -> AppResult<Option<UserProfile>> {
+    let result = sqlx::query_as!(
+        UserProfile,
+        r#"
+        SELECT id, username, email, created_at
+        FROM users
+        WHERE id = $1
+        "#,
+        id
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(AppError::from)?;
+
+    tracing::debug!(found = result.is_some(), "user profile lookup by id");
     Ok(result)
 }
 
