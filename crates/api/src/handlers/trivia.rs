@@ -9,10 +9,9 @@ use chrono::Utc;
 use db::{
     models::Difficulty,
     queries::{
-        create_trivia_submission, find_trivia_challenge_by_date, find_trivia_challenge_by_id,
-        find_trivia_challenge_history, find_trivia_past_challenges,
-        find_trivia_submissions_by_user_and_challenge, increment_trivia_attempts,
-        upsert_trivia_stats_on_solve,
+        create_trivia_submission_atomic, find_trivia_challenge_by_date,
+        find_trivia_challenge_by_id, find_trivia_challenge_history, find_trivia_past_challenges,
+        find_trivia_submissions_by_user_and_challenge,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -164,56 +163,31 @@ pub async fn submit(
             AppError::NotFound
         })?;
 
-    let submissions =
-        find_trivia_submissions_by_user_and_challenge(&state.pool, user_id, challenge.id).await?;
-
-    if submissions.iter().any(|s| s.is_correct) {
-        tracing::debug!(user_id = %user_id, challenge_id = %challenge_id, "rejected — already solved");
-        return Err(AppError::BadRequest("Challenge already solved".into()));
-    }
-
-    if submissions.len() as i32 >= challenge.max_attempts {
-        tracing::debug!(user_id = %user_id, challenge_id = %challenge_id, "rejected — no attempts remaining");
-        return Err(AppError::BadRequest("No attempts remaining".into()));
-    }
-
-    let attempt_number = submissions.len() as i32 + 1;
     let user_answer = payload.answer.trim().to_lowercase();
     let challenge_answer = challenge.expected_answer.trim().to_lowercase();
     let is_correct = user_answer == challenge_answer;
 
-    create_trivia_submission(
+    let today = Utc::now().date_naive();
+    let solved_date = if is_correct && challenge.scheduled_date == today {
+        Some(today)
+    } else {
+        None
+    };
+
+    // Atomic check-and-insert: locks the challenge row so concurrent
+    // requests cannot bypass the attempt limit.
+    let submission = create_trivia_submission_atomic(
         &state.pool,
         user_id,
         challenge.id,
         &payload.answer,
         is_correct,
-        attempt_number,
+        challenge.max_attempts,
+        solved_date,
     )
     .await?;
 
-    increment_trivia_attempts(&state.pool, user_id).await?;
-
-    if is_correct {
-        let today = Utc::now().date_naive();
-        if challenge.scheduled_date == today {
-            upsert_trivia_stats_on_solve(&state.pool, user_id, today).await?;
-        }
-        tracing::info!(
-            user_id = %user_id,
-            challenge_id = %challenge_id,
-            attempt_number,
-            "trivia challenge solved"
-        );
-    } else {
-        tracing::debug!(
-            user_id = %user_id,
-            challenge_id = %challenge_id,
-            attempt_number,
-            "incorrect trivia answer"
-        );
-    }
-
+    let attempt_number = submission.attempt_number;
     let attempts_remaining = challenge.max_attempts - attempt_number;
     let hint = if !is_correct && attempt_number >= 3 {
         challenge.hint

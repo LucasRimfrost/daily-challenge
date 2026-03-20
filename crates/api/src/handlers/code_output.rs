@@ -7,10 +7,9 @@ use axum::{
 };
 use chrono::Utc;
 use db::queries::{
-    create_code_output_submission, find_code_output_challenge_by_date,
+    create_code_output_submission_atomic, find_code_output_challenge_by_date,
     find_code_output_challenge_by_id, find_code_output_challenge_history,
     find_code_output_past_challenges, find_code_output_submissions_by_user_and_challenge,
-    increment_code_output_attempts, upsert_code_output_stats_on_solve,
 };
 use serde::{Deserialize, Serialize};
 use shared::error::{AppError, AppResult};
@@ -178,58 +177,31 @@ pub async fn submit(
             AppError::NotFound
         })?;
 
-    let submissions =
-        find_code_output_submissions_by_user_and_challenge(&state.pool, user_id, challenge.id)
-            .await?;
-
-    if submissions.iter().any(|s| s.is_correct) {
-        tracing::debug!(user_id = %user_id, challenge_id = %challenge_id, "rejected — already solved");
-        return Err(AppError::BadRequest("Challenge already solved".into()));
-    }
-
-    if submissions.len() as i32 >= challenge.max_attempts {
-        tracing::debug!(user_id = %user_id, challenge_id = %challenge_id, "rejected — no attempts remaining");
-        return Err(AppError::BadRequest("No attempts remaining".into()));
-    }
-
-    let attempt_number = submissions.len() as i32 + 1;
-
     // Case-sensitive match with normalized quotes and spacing
     let is_correct =
         normalize_output(&payload.answer) == normalize_output(&challenge.expected_output);
 
-    create_code_output_submission(
+    let today = Utc::now().date_naive();
+    let solved_date = if is_correct && challenge.scheduled_date == today {
+        Some(today)
+    } else {
+        None
+    };
+
+    // Atomic check-and-insert: locks the challenge row so concurrent
+    // requests cannot bypass the attempt limit.
+    let submission = create_code_output_submission_atomic(
         &state.pool,
         user_id,
         challenge.id,
         &payload.answer,
         is_correct,
-        attempt_number,
+        challenge.max_attempts,
+        solved_date,
     )
     .await?;
 
-    increment_code_output_attempts(&state.pool, user_id).await?;
-
-    if is_correct {
-        let today = Utc::now().date_naive();
-        if challenge.scheduled_date == today {
-            upsert_code_output_stats_on_solve(&state.pool, user_id, today).await?;
-        }
-        tracing::info!(
-            user_id = %user_id,
-            challenge_id = %challenge_id,
-            attempt_number,
-            "code output challenge solved"
-        );
-    } else {
-        tracing::debug!(
-            user_id = %user_id,
-            challenge_id = %challenge_id,
-            attempt_number,
-            "incorrect code output answer"
-        );
-    }
-
+    let attempt_number = submission.attempt_number;
     let attempts_remaining = challenge.max_attempts - attempt_number;
     let hint = if !is_correct && attempt_number >= 2 {
         challenge.hint

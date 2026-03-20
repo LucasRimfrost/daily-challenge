@@ -133,6 +133,151 @@ pub async fn create_trivia_submission(
     Ok(submission)
 }
 
+/// Atomically validates attempt limits and records a trivia submission.
+///
+/// Uses a transaction with `SELECT … FOR UPDATE` on the challenge row to
+/// serialise concurrent requests for the same (user, challenge) pair.
+/// Also increments the user's attempt counter and, when `solved_date` is
+/// provided, upserts their streak / solve stats.
+///
+/// Returns the inserted submission together with the total attempt count.
+///
+/// # Errors
+///
+/// Returns [`AppError::BadRequest`] if the challenge is already solved or
+/// the maximum number of attempts has been reached.
+#[tracing::instrument(skip(pool, answer))]
+pub async fn create_trivia_submission_atomic(
+    pool: &PgPool,
+    user_id: Uuid,
+    challenge_id: Uuid,
+    answer: &str,
+    is_correct: bool,
+    max_attempts: i32,
+    solved_date: Option<chrono::NaiveDate>,
+) -> AppResult<TriviaSubmission> {
+    let mut tx = pool.begin().await.map_err(AppError::from)?;
+
+    // Lock the challenge row to serialise concurrent submissions.
+    let locked = sqlx::query_scalar!(
+        "SELECT id FROM trivia_challenges WHERE id = $1 FOR UPDATE",
+        challenge_id
+    )
+    .fetch_optional(&mut *tx)
+    .await
+    .map_err(AppError::from)?;
+
+    if locked.is_none() {
+        return Err(AppError::NotFound);
+    }
+
+    // Count existing submissions *inside* the transaction.
+    let existing: Vec<TriviaSubmission> = sqlx::query_as!(
+        TriviaSubmission,
+        r#"
+        SELECT id, user_id, challenge_id, answer,
+               is_correct, attempt_number, submitted_at
+        FROM trivia_submissions
+        WHERE user_id = $1 AND challenge_id = $2
+        "#,
+        user_id,
+        challenge_id,
+    )
+    .fetch_all(&mut *tx)
+    .await
+    .map_err(AppError::from)?;
+
+    if existing.iter().any(|s| s.is_correct) {
+        return Err(AppError::BadRequest("Challenge already solved".into()));
+    }
+
+    if existing.len() as i32 >= max_attempts {
+        return Err(AppError::BadRequest("No attempts remaining".into()));
+    }
+
+    let attempt_number = existing.len() as i32 + 1;
+
+    // Insert the submission.
+    let submission = sqlx::query_as!(
+        TriviaSubmission,
+        r#"
+        INSERT INTO trivia_submissions (user_id, challenge_id, answer,
+                                 is_correct, attempt_number)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, user_id, challenge_id, answer, is_correct,
+                  attempt_number, submitted_at
+        "#,
+        user_id,
+        challenge_id,
+        answer,
+        is_correct,
+        attempt_number,
+    )
+    .fetch_one(&mut *tx)
+    .await
+    .map_err(AppError::from)?;
+
+    // Increment lifetime attempt counter.
+    sqlx::query!(
+        r#"
+        INSERT INTO trivia_stats (user_id, total_attempts)
+        VALUES ($1, 1)
+        ON CONFLICT (user_id) DO UPDATE SET
+            total_attempts = trivia_stats.total_attempts + 1
+        "#,
+        user_id,
+    )
+    .execute(&mut *tx)
+    .await
+    .map_err(AppError::from)?;
+
+    // Update streak / solve stats when the answer is correct.
+    if let Some(date) = solved_date {
+        sqlx::query!(
+            r#"
+            INSERT INTO trivia_stats (user_id, current_streak, longest_streak, total_solved, last_solved_date)
+            VALUES ($1, 1, 1, 1, $2)
+            ON CONFLICT (user_id) DO UPDATE SET
+                current_streak = CASE
+                    WHEN trivia_stats.last_solved_date = $2 THEN trivia_stats.current_streak
+                    WHEN trivia_stats.last_solved_date = $2 - 1 THEN trivia_stats.current_streak + 1
+                    ELSE 1
+                END,
+                longest_streak = GREATEST(
+                    trivia_stats.longest_streak,
+                    CASE
+                        WHEN trivia_stats.last_solved_date = $2 THEN trivia_stats.current_streak
+                        WHEN trivia_stats.last_solved_date = $2 - 1 THEN trivia_stats.current_streak + 1
+                        ELSE 1
+                    END
+                ),
+                total_solved = CASE
+                    WHEN trivia_stats.last_solved_date = $2 THEN trivia_stats.total_solved
+                    ELSE trivia_stats.total_solved + 1
+                END,
+                last_solved_date = $2
+            "#,
+            user_id,
+            date,
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(AppError::from)?;
+    }
+
+    tx.commit().await.map_err(AppError::from)?;
+
+    tracing::info!(
+        submission_id = %submission.id,
+        %user_id,
+        %challenge_id,
+        is_correct,
+        attempt_number,
+        "trivia submission recorded (atomic)"
+    );
+    Ok(submission)
+}
+
 // ── Trivia history ──────────────────────────────────────────────────────────
 
 /// Returns a user's best attempt per trivia challenge, most recent first.
