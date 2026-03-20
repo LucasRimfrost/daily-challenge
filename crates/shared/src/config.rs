@@ -65,15 +65,15 @@ impl Config {
             jwt_access_token_expiry_minutes: env::var("JWT_ACCESS_TOKEN_EXPIRY_MINUTES")?
                 .parse()
                 .map_err(|e| ConfigError::InvalidInt {
-                    name: "JWT_ACCESS_TOKEN_EXPIRY_MINUTES",
-                    source: e,
-                })?,
-            refresh_token_expiry_days: env::var("REFRESH_TOKEN_EXPIRY_DAYS")?
-                .parse()
-                .map_err(|e| ConfigError::InvalidInt {
+                name: "JWT_ACCESS_TOKEN_EXPIRY_MINUTES",
+                source: e,
+            })?,
+            refresh_token_expiry_days: env::var("REFRESH_TOKEN_EXPIRY_DAYS")?.parse().map_err(
+                |e| ConfigError::InvalidInt {
                     name: "REFRESH_TOKEN_EXPIRY_DAYS",
                     source: e,
-                })?,
+                },
+            )?,
             host: env::var("BACKEND_HOST")?,
             port: env::var("BACKEND_PORT")?,
             static_dir: env::var("STATIC_DIR").ok(),
