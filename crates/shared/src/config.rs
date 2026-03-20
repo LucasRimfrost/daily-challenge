@@ -25,7 +25,10 @@ impl fmt::Debug for Config {
         f.debug_struct("Config")
             .field("database_url", &"[REDACTED]")
             .field("jwt_secret", &"[REDACTED]")
-            .field("jwt_access_token_expiry_minutes", &self.jwt_access_token_expiry_minutes)
+            .field(
+                "jwt_access_token_expiry_minutes",
+                &self.jwt_access_token_expiry_minutes,
+            )
             .field("refresh_token_expiry_days", &self.refresh_token_expiry_days)
             .field("host", &self.host)
             .field("port", &self.port)

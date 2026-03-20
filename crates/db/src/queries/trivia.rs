@@ -454,6 +454,7 @@ pub async fn find_trivia_past_challenges(
         WHERE c.scheduled_date < $2
         GROUP BY c.id
         ORDER BY c.scheduled_date DESC
+        LIMIT 365
         "#,
         user_id,
         today

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT c.id, c.title,\n               c.difficulty as \"difficulty: Difficulty\",\n               c.scheduled_date, c.max_attempts,\n               COALESCE(bool_or(s.is_correct), false) as \"is_solved!\",\n               COUNT(s.id) as \"attempts_used!\"\n        FROM trivia_challenges c\n        LEFT JOIN trivia_submissions s ON s.challenge_id = c.id AND s.user_id = $1\n        WHERE c.scheduled_date < $2\n        GROUP BY c.id\n        ORDER BY c.scheduled_date DESC\n        ",
+  "query": "\n        SELECT c.id, c.title, c.language,\n               c.difficulty as \"difficulty: Difficulty\",\n               c.scheduled_date, c.max_attempts,\n               COALESCE(bool_or(s.is_correct), false) as \"is_solved!\",\n               COUNT(s.id) as \"attempts_used!\"\n        FROM code_output_challenges c\n        LEFT JOIN code_output_submissions s ON s.challenge_id = c.id AND s.user_id = $1\n        WHERE c.scheduled_date < $2\n        GROUP BY c.id\n        ORDER BY c.scheduled_date DESC\n        LIMIT 365\n        ",
   "describe": {
     "columns": [
       {
@@ -15,26 +15,31 @@
       },
       {
         "ordinal": 2,
-        "name": "difficulty: Difficulty",
+        "name": "language",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
+        "name": "difficulty: Difficulty",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
         "name": "scheduled_date",
         "type_info": "Date"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "max_attempts",
         "type_info": "Int4"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "is_solved!",
         "type_info": "Bool"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "attempts_used!",
         "type_info": "Int8"
       }
@@ -51,9 +56,10 @@
       false,
       false,
       false,
+      false,
       null,
       null
     ]
   },
-  "hash": "449a800af618f6b366fc4df6e46d2c7da3b0c2a3b7946ec2a6d5e2b029464717"
+  "hash": "1f6c1c584cff2812105e9a4b354ed98c201403b47fb47f5a643fdc30c6b63509"
 }
