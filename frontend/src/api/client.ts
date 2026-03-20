@@ -51,6 +51,7 @@ async function rawFetch(path: string, options: RequestInit): Promise<Response> {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
       ...options.headers,
     },
   });

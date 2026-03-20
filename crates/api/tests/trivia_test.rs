@@ -303,6 +303,7 @@ async fn submit_requires_auth() {
     let client = reqwest::Client::new();
     let resp = client
         .post(app.url("/api/v1/trivia/submit"))
+        .header("x-requested-with", "XMLHttpRequest")
         .json(&json!({ "challenge_id": challenge_id, "answer": "4" }))
         .send()
         .await

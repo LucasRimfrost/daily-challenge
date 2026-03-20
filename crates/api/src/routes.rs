@@ -8,7 +8,9 @@ use tower_http::{
 
 use axum::routing::{get, patch, post};
 
-use crate::{AppState, handlers, middleware::logging, middleware::rate_limit::RateLimiters};
+use crate::{
+    AppState, handlers, middleware::csrf, middleware::logging, middleware::rate_limit::RateLimiters,
+};
 
 /// Builds the top-level Axum router with all API routes, middleware, CORS,
 /// rate limiting, and security headers.
@@ -66,11 +68,17 @@ pub fn router(state: AppState) -> Router {
             axum::http::Method::POST,
             axum::http::Method::PATCH,
         ])
-        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
+        .allow_headers([
+            header::CONTENT_TYPE,
+            header::AUTHORIZATION,
+            header::HeaderName::from_static("x-requested-with"),
+        ])
         .allow_credentials(true);
 
+    let api_routes = routes.layer(middleware::from_fn(csrf::require_csrf_header));
+
     let app = Router::new()
-        .nest("/api/v1", routes)
+        .nest("/api/v1", api_routes)
         // ── Observability (outermost → innermost) ───────────────────
         .layer(logging::sensitive_headers_layer())
         .layer(logging::trace_layer())

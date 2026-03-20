@@ -54,8 +54,15 @@ impl TestApp {
             .unwrap();
         });
 
+        let mut default_headers = reqwest::header::HeaderMap::new();
+        default_headers.insert(
+            "x-requested-with",
+            reqwest::header::HeaderValue::from_static("XMLHttpRequest"),
+        );
+
         let client = reqwest::Client::builder()
             .cookie_store(true)
+            .default_headers(default_headers)
             .build()
             .unwrap();
 

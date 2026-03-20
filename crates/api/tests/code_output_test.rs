@@ -310,6 +310,7 @@ async fn submit_requires_auth() {
     let client = reqwest::Client::new();
     let resp = client
         .post(app.url("/api/v1/code-output/submit"))
+        .header("x-requested-with", "XMLHttpRequest")
         .json(&json!({ "challenge_id": challenge_id, "answer": "[2, 3]" }))
         .send()
         .await
