@@ -1,7 +1,6 @@
-use auth::jwt::Claims;
+use auth::jwt;
 use axum::extract::FromRequestParts;
 use axum_extra::extract::CookieJar;
-use jsonwebtoken::{DecodingKey, Validation, decode};
 use shared::error::AppError;
 use uuid::Uuid;
 
@@ -35,20 +34,12 @@ impl FromRequestParts<AppState> for AuthUser {
 
         let token = cookie.value();
 
-        let token_data = decode::<Claims>(
-            token,
-            &DecodingKey::from_secret(state.config.jwt_secret.as_ref()),
-            &Validation::default(),
-        )
-        .map_err(|e| {
-            tracing::warn!(error = %e, "auth rejected — invalid JWT");
-            AppError::Unauthorized
-        })?;
+        let claims = jwt::validate_token(token, &state.config.jwt_secret)?;
 
-        let user_id = Uuid::parse_str(&token_data.claims.sub).map_err(|e| {
+        let user_id = Uuid::parse_str(&claims.sub).map_err(|e| {
             tracing::error!(
                 error = %e,
-                sub = %token_data.claims.sub,
+                sub = %claims.sub,
                 "auth rejected — malformed UUID in JWT sub claim"
             );
             AppError::Unauthorized

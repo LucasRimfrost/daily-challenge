@@ -2,6 +2,9 @@
 
 mod common;
 
+use chrono::Utc;
+use jsonwebtoken::{EncodingKey, Header, encode};
+use serde::Serialize;
 use serial_test::serial;
 
 #[tokio::test]
@@ -133,4 +136,47 @@ async fn auth_body_limit_rejects_oversized_payload() {
         .unwrap();
 
     assert_eq!(resp.status(), 413);
+}
+
+// ── JWT issuer validation ──────────────────────────────────────────────────
+
+#[derive(Serialize)]
+struct FakeClaims {
+    sub: String,
+    exp: usize,
+    iat: usize,
+    iss: String,
+}
+
+#[tokio::test]
+#[serial]
+async fn jwt_with_wrong_issuer_is_rejected() {
+    let app = common::TestApp::spawn().await;
+
+    // Craft a JWT signed with the correct secret but with the wrong issuer
+    let now = Utc::now();
+    let claims = FakeClaims {
+        sub: "550e8400-e29b-41d4-a716-446655440000".to_string(),
+        exp: (now + chrono::Duration::minutes(60)).timestamp() as usize,
+        iat: now.timestamp() as usize,
+        iss: "wrong-issuer".to_string(),
+    };
+
+    let token = encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(app.config().jwt_secret.as_bytes()),
+    )
+    .unwrap();
+
+    // Use a fresh client (no cookie jar) and manually set the cookie
+    let client = reqwest::Client::new();
+    let resp = client
+        .get(app.url("/api/v1/auth/me"))
+        .header("Cookie", format!("access_token={token}"))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(resp.status(), 401);
 }

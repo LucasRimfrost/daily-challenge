@@ -3,7 +3,7 @@ use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode}
 use serde::{Deserialize, Serialize};
 use shared::error::{AppError, AppResult};
 
-const ISSUER: &str = "daily-challenge";
+const ISSUER: &str = "brainforge";
 
 /// JWT claims payload embedded in every access token.
 #[derive(Debug, Deserialize, Serialize)]
@@ -14,7 +14,7 @@ pub struct Claims {
     pub exp: usize,
     /// Issued-at time (UTC epoch seconds).
     pub iat: usize,
-    /// Issuer identifier (`"daily-challenge"`).
+    /// Issuer identifier (`"brainforge"`).
     pub iss: String,
 }
 
@@ -51,7 +51,7 @@ pub fn create_access_token(user_id: &str, secret: &str, expiry_minutes: i64) -> 
 
 /// Validates a JWT access token and returns its [`Claims`].
 ///
-/// Checks the signature, expiration, and issuer (`"daily-challenge"`).
+/// Checks the signature, expiration, and issuer (`"brainforge"`).
 ///
 /// # Errors
 ///
@@ -95,7 +95,7 @@ mod tests {
         let token = create_access_token(USER_ID, SECRET, 60).unwrap();
         let claims = validate_token(&token, SECRET).unwrap();
         assert_eq!(claims.sub, USER_ID);
-        assert_eq!(claims.iss, "daily-challenge");
+        assert_eq!(claims.iss, "brainforge");
         assert!(claims.exp > claims.iat);
     }
 

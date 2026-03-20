@@ -11,6 +11,7 @@ pub struct TestApp {
     pub addr: SocketAddr,
     pub pool: PgPool,
     pub client: reqwest::Client,
+    config: Config,
 }
 
 impl TestApp {
@@ -34,7 +35,7 @@ impl TestApp {
 
         let state = AppState {
             pool: pool.clone(),
-            config,
+            config: config.clone(),
         };
 
         let router = routes::router(state);
@@ -58,12 +59,22 @@ impl TestApp {
             .build()
             .unwrap();
 
-        Self { addr, pool, client }
+        Self {
+            addr,
+            pool,
+            client,
+            config,
+        }
     }
 
     /// Build a full URL from a path, e.g. `/api/v1/auth/login`
     pub fn url(&self, path: &str) -> String {
         format!("http://{}{}", self.addr, path)
+    }
+
+    /// Access the test server's configuration (e.g. for crafting JWTs in tests).
+    pub fn config(&self) -> &Config {
+        &self.config
     }
 
     // ── Auth helpers ────────────────────────────────────────────────
