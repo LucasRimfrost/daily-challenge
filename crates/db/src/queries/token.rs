@@ -175,3 +175,62 @@ pub async fn mark_password_reset_token_used(pool: &PgPool, token_id: Uuid) -> Ap
     tracing::debug!(%token_id, "password reset token marked as used");
     Ok(())
 }
+
+/// Atomically resets a user's password, marks the reset token as used, and
+/// revokes all refresh tokens — all within a single transaction.
+///
+/// Prevents partial state corruption if the server crashes mid-sequence.
+#[tracing::instrument(skip(pool, password_hash))]
+pub async fn reset_password_atomic(
+    pool: &PgPool,
+    user_id: Uuid,
+    token_id: Uuid,
+    password_hash: &str,
+) -> AppResult<()> {
+    let mut tx = pool.begin().await.map_err(AppError::from)?;
+
+    // 1. Update the password.
+    sqlx::query!(
+        r#"
+        UPDATE users
+        SET password_hash = $2
+        WHERE id = $1
+        "#,
+        user_id,
+        password_hash,
+    )
+    .execute(&mut *tx)
+    .await
+    .map_err(AppError::from)?;
+
+    // 2. Mark the reset token as used.
+    sqlx::query!(
+        r#"
+        UPDATE password_reset_tokens
+        SET used_at = now()
+        WHERE id = $1 AND used_at IS NULL
+        "#,
+        token_id,
+    )
+    .execute(&mut *tx)
+    .await
+    .map_err(AppError::from)?;
+
+    // 3. Revoke all refresh tokens — force re-login everywhere.
+    sqlx::query!(
+        r#"
+        UPDATE refresh_tokens
+        SET revoked_at = now()
+        WHERE user_id = $1 AND revoked_at IS NULL
+        "#,
+        user_id,
+    )
+    .execute(&mut *tx)
+    .await
+    .map_err(AppError::from)?;
+
+    tx.commit().await.map_err(AppError::from)?;
+
+    tracing::info!(%user_id, %token_id, "password reset completed (atomic)");
+    Ok(())
+}

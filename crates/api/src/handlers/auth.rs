@@ -372,14 +372,9 @@ pub async fn reset_password(
             AppError::InternalError
         })??;
 
-    // Update password
-    db::queries::update_user_password(&state.pool, stored.user_id, &hashed).await?;
-
-    // Mark token as used
-    db::queries::mark_password_reset_token_used(&state.pool, stored.id).await?;
-
-    // Revoke all refresh tokens — force re-login everywhere
-    db::queries::revoke_all_user_refresh_tokens(&state.pool, stored.user_id).await?;
+    // Atomically: update password + mark token used + revoke all refresh tokens.
+    // Wrapped in a single transaction to prevent partial state on crash.
+    db::queries::reset_password_atomic(&state.pool, stored.user_id, stored.id, &hashed).await?;
 
     tracing::info!(user_id = %stored.user_id, "password reset successful");
 
