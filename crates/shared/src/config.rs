@@ -1,4 +1,17 @@
-use std::{env, fmt};
+use std::{env, fmt, num::ParseIntError};
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum ConfigError {
+    #[error("missing environment variable: {0}")]
+    MissingVar(#[from] env::VarError),
+
+    #[error("invalid integer for {name}: {source}")]
+    InvalidInt {
+        name: &'static str,
+        source: ParseIntError,
+    },
+}
 
 /// Application configuration loaded from environment variables.
 ///
@@ -43,22 +56,24 @@ impl Config {
     ///
     /// # Errors
     ///
-    /// Returns [`env::VarError`] if any required variable is missing.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `JWT_ACCESS_TOKEN_EXPIRY_MINUTES` or `REFRESH_TOKEN_EXPIRY_DAYS`
-    /// cannot be parsed as integers.
-    pub fn from_env() -> Result<Self, env::VarError> {
+    /// Returns [`ConfigError`] if any required variable is missing or if
+    /// integer-valued variables cannot be parsed.
+    pub fn from_env() -> Result<Self, ConfigError> {
         Ok(Self {
             database_url: env::var("DATABASE_URL")?,
             jwt_secret: env::var("JWT_SECRET")?,
             jwt_access_token_expiry_minutes: env::var("JWT_ACCESS_TOKEN_EXPIRY_MINUTES")?
                 .parse()
-                .expect("JWT_ACCESS_TOKEN_EXPIRY_MINUTES must be a valid number"),
+                .map_err(|e| ConfigError::InvalidInt {
+                    name: "JWT_ACCESS_TOKEN_EXPIRY_MINUTES",
+                    source: e,
+                })?,
             refresh_token_expiry_days: env::var("REFRESH_TOKEN_EXPIRY_DAYS")?
                 .parse()
-                .expect("JWT_ACCESS_TOKEN_EXPIRY_MINUTES must be a valid number"),
+                .map_err(|e| ConfigError::InvalidInt {
+                    name: "REFRESH_TOKEN_EXPIRY_DAYS",
+                    source: e,
+                })?,
             host: env::var("BACKEND_HOST")?,
             port: env::var("BACKEND_PORT")?,
             static_dir: env::var("STATIC_DIR").ok(),
