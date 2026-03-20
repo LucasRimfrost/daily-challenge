@@ -15,11 +15,6 @@ pub fn hash_refresh_token(token: &str) -> String {
     hex::encode(hasher.finalize())
 }
 
-/// Verify a refresh token against its stored hash.
-pub fn verify_refresh_token(token: &str, stored_hash: &str) -> bool {
-    hash_refresh_token(token) == stored_hash
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -37,19 +32,5 @@ mod tests {
     fn hash_is_deterministic() {
         let token = "test-token-123";
         assert_eq!(hash_refresh_token(token), hash_refresh_token(token));
-    }
-
-    #[test]
-    fn verify_accepts_correct_token() {
-        let token = generate_refresh_token();
-        let hash = hash_refresh_token(&token);
-        assert!(verify_refresh_token(&token, &hash));
-    }
-
-    #[test]
-    fn verify_rejects_wrong_token() {
-        let token = generate_refresh_token();
-        let hash = hash_refresh_token(&token);
-        assert!(!verify_refresh_token("wrong-token", &hash));
     }
 }
