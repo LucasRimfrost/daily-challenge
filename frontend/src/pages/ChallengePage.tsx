@@ -28,6 +28,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { SegmentedProgressBar } from "@/components/SegmentedProgressBar";
+import { HintPopover } from "@/components/HintPopover";
 
 /** Extract arrow-separated sequences (e.g. "87 → 165 → 726 → ?") into visual pills */
 function parseDescription(description: string): { text: string; pills: string[] | null } {
@@ -333,19 +334,6 @@ export function ChallengePage() {
             </p>
           )}
 
-          {/* Hint display */}
-          {hint && hintVisible && (
-            <div className="animate-slide-up-fade mt-6 rounded-xl bg-yellow-500/[0.06] border border-yellow-500/10 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Lightbulb className="size-4 shrink-0 text-yellow-500" />
-                <p className="text-xs font-medium text-yellow-700 dark:text-yellow-400">
-                  Hint
-                </p>
-              </div>
-              <p className="mt-1.5 text-sm text-foreground/80 ml-6">{hint}</p>
-            </div>
-          )}
-
           {/* Answer input */}
           <form noValidate onSubmit={handleSubmit} className="mt-8">
             <div className={cn("flex items-center gap-2", shaking && "animate-shake")}>
@@ -363,21 +351,11 @@ export function ChallengePage() {
                 aria-invalid={!!answerError || undefined}
               />
               {hint && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="lg"
-                  onClick={() => setHintVisible((v) => !v)}
-                  className={cn(
-                    "shrink-0",
-                    hintVisible
-                      ? "text-yellow-500"
-                      : "text-muted-foreground hover:text-yellow-500",
-                  )}
-                  aria-label={hintVisible ? "Hide hint" : "Show hint"}
-                >
-                  <Lightbulb className="size-4" />
-                </Button>
+                <HintPopover
+                  hint={hint}
+                  visible={hintVisible}
+                  onToggle={() => setHintVisible((v) => !v)}
+                />
               )}
               <Button type="submit" disabled={submitting} size="lg">
                 {submitting ? (
@@ -397,12 +375,17 @@ export function ChallengePage() {
       {/* ── Solved ── */}
       {challenge.is_solved && (
         <>
-          {/* Hero answer */}
-          <div className="animate-slide-up-fade text-center py-6">
-            <p className="text-[40px] font-medium font-mono leading-tight">
-              {challenge.correct_answer}
-            </p>
-            <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+          {/* Answer reveal — success */}
+          <div className="text-center py-6">
+            <div className="animate-result-success result-reveal result-reveal-success inline-block rounded-xl px-8 py-5">
+              <span className="result-label result-label-success block text-[11px] font-medium mb-1.5">
+                Answer
+              </span>
+              <p className="font-mono text-[28px] sm:text-[32px] font-medium result-text-success leading-tight">
+                {challenge.correct_answer}
+              </p>
+            </div>
+            <p className="text-sm text-green-600 dark:text-green-400 mt-3">
               Solved in {challenge.attempts_used} attempt
               {challenge.attempts_used === 1 ? "" : "s"}
             </p>
@@ -459,15 +442,17 @@ export function ChallengePage() {
       {/* ── Exhausted ── */}
       {exhausted && (
         <>
-          <div className="animate-slide-up-fade text-center py-6">
+          <div className="text-center py-6">
             <XCircle className="mx-auto mb-3 size-8 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground mb-2">The answer was</p>
+            <p className="text-sm text-muted-foreground mb-4">The answer was</p>
             {challenge.correct_answer && (
-              <p className="text-[40px] font-medium font-mono leading-tight text-muted-foreground">
-                {challenge.correct_answer}
-              </p>
+              <div className="animate-fail-reveal result-reveal result-reveal-fail inline-block rounded-xl px-8 py-5">
+                <p className="font-mono text-[28px] sm:text-[32px] font-medium text-foreground leading-tight">
+                  {challenge.correct_answer}
+                </p>
+              </div>
             )}
-            <p className="text-sm text-muted-foreground mt-3">
+            <p className="text-sm text-muted-foreground mt-5">
               Better luck tomorrow!
             </p>
           </div>

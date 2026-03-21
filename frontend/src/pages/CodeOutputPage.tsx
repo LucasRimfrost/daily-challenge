@@ -33,6 +33,7 @@ import {
   Terminal,
 } from "lucide-react";
 import { SegmentedProgressBar } from "@/components/SegmentedProgressBar";
+import { HintPopover } from "@/components/HintPopover";
 import Prism from "prismjs";
 import "prismjs/components/prism-python";
 import "prismjs/components/prism-javascript";
@@ -384,19 +385,6 @@ export function CodeOutputPage() {
               </p>
             )}
 
-            {/* Hint display */}
-            {hint && hintVisible && (
-              <div className="animate-slide-up-fade mt-6 rounded-xl bg-yellow-500/[0.06] border border-yellow-500/10 px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <Lightbulb className="size-4 shrink-0 text-yellow-500" />
-                  <p className="text-xs font-medium text-yellow-700 dark:text-yellow-400">
-                    Hint
-                  </p>
-                </div>
-                <p className="mt-1.5 text-sm text-foreground/80 ml-6">{hint}</p>
-              </div>
-            )}
-
             {/* Answer input */}
             <form noValidate onSubmit={handleSubmit} className="mt-8">
               <div className={cn("flex items-center gap-2", shaking && "animate-shake")}>
@@ -414,21 +402,11 @@ export function CodeOutputPage() {
                   aria-invalid={!!answerError || undefined}
                 />
                 {hint && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="lg"
-                    onClick={() => setHintVisible((v) => !v)}
-                    className={cn(
-                      "shrink-0",
-                      hintVisible
-                        ? "text-yellow-500"
-                        : "text-muted-foreground hover:text-yellow-500",
-                    )}
-                    aria-label={hintVisible ? "Hide hint" : "Show hint"}
-                  >
-                    <Lightbulb className="size-4" />
-                  </Button>
+                  <HintPopover
+                    hint={hint}
+                    visible={hintVisible}
+                    onToggle={() => setHintVisible((v) => !v)}
+                  />
                 )}
                 <Button type="submit" disabled={submitting} size="lg">
                   {submitting ? (
@@ -454,8 +432,8 @@ export function CodeOutputPage() {
             {/* Answer reveal — success */}
             <div className="text-center py-4">
               <div className="animate-result-success result-reveal result-reveal-success inline-block rounded-xl px-8 py-5">
-                <span className="result-label result-label-success block text-[10px] uppercase tracking-[0.08em] font-medium mb-1.5">
-                  Output
+                <span className="result-label result-label-success block text-[11px] font-medium mb-1.5">
+                  Result
                 </span>
                 <pre className="font-mono text-[28px] sm:text-[32px] font-medium result-text-success leading-tight whitespace-pre-wrap">
                   {challenge.correct_answer}
@@ -525,9 +503,6 @@ export function CodeOutputPage() {
               {/* Answer reveal — failure */}
               {challenge.correct_answer && (
                 <div className="animate-fail-reveal result-reveal result-reveal-fail inline-block rounded-xl px-8 py-5">
-                  <span className="result-label result-label-fail block text-[10px] uppercase tracking-[0.08em] font-medium mb-1.5">
-                    Output
-                  </span>
                   <pre className="font-mono text-[28px] sm:text-[32px] font-medium text-foreground leading-tight whitespace-pre-wrap">
                     {challenge.correct_answer}
                   </pre>
