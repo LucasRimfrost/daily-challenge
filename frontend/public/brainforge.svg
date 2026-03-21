@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fbbf24"/>
+      <stop offset="1" stop-color="#ef4444"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <!-- Left brain hemisphere — inner edge forms left side of lightning bolt gap -->
+  <path d="M29 12 C21 8 13 12 10 20 C7 28 7 36 10 42 C13 48 21 54 29 55 L24 43 L36 25Z" fill="#fff"/>
+  <!-- Right brain hemisphere — inner edge forms right side of lightning bolt gap -->
+  <path d="M35 12 C43 8 51 12 54 20 C57 28 57 36 54 42 C51 48 43 54 35 55 L30 43 L42 25Z" fill="#fff"/>
+</svg>
